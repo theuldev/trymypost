@@ -1,0 +1,10 @@
+_type: prompt
+input_variables:
+  ["conteudo_post"]
+template: |
+  Analise o seguinte post:
+  "{conteudo_post}"
+  
+  Sugira as 5 hashtags mais relevantes para aumentar o alcance deste conteúdo no LinkedIn.
+  Considere hashtags de nicho e hashtags amplas.
+  Retorne apenas as hashtags separadas por espaço.

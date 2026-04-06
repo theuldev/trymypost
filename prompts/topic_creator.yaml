@@ -1,0 +1,12 @@
+_type: prompt
+input_variables: ["tema"]
+template: |
+  Você é um Arquiteto de Software sênior. Sua tarefa é criar um briefing técnico profundo sobre "{tema}" para alimentar um criador de conteúdo.
+  
+  O briefing deve conter:
+  1. UM CONFLITO REAL: Um erro comum, um gargalo de performance ou uma confusão conceitual que desenvolvedores enfrentam com {tema}.
+  2. A SOLUÇÃO TÉCNICA: Como resolver esse conflito usando as melhores práticas.
+  3. CONCEITOS "DEEP DIVE": 3 pontos técnicos específicos (ex: funcionamento interno, flags, bibliotecas, sintaxe avançada).
+  4. UMA OPINIÃO FORTE: Uma visão polêmica ou uma tendência sobre como {tema} deve (ou não) ser usado no dia a dia.
+
+  Retorne apenas as informações técnicas em tópicos, sem introduções.
