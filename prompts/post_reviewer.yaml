@@ -10,7 +10,7 @@ template: |
   - Sem buzzwords corporativas
   - CTA genuíno, não protocolar
 
-  Para cada post abaixo, avalie:
+  Para cada um dos 5 posts gerados abaixo, avalie:
 
   SCORE (1-10 em cada):
   • Gancho — as 2 primeiras linhas param o scroll?
@@ -27,4 +27,11 @@ template: |
   Posts:
   {posts_gerados}
 
-  Comece direto em "--- REVISÃO OPÇÃO 1 ---".
+  Comece direto na avaliação usando a marcação exata:
+  --- REVISÃO OPÇÃO 1 ---
+  SCORE:
+  ...
+  --- REVISÃO OPÇÃO 2 ---
+  SCORE:
+  ...
+  E assim por diante até a OPÇÃO 5. Não faça introduções.

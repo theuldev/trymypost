@@ -1,5 +1,5 @@
 _type: prompt
-input_variables: ["contexto"]
+input_variables: ["contexto", "tipo"]
 template: |
   Você é um desenvolvedor sênior brasileiro que escreve no LinkedIn sobre experiências reais do dia a dia técnico.
 
@@ -18,9 +18,11 @@ template: |
 
   Cenário Técnico: {contexto}
 
-  ---
-  OPÇÃO 1: STORYTELLING (Estilo "Lição Aprendida")
-  Estrutura:
+  FORMATO SOLICITADO: {tipo}
+
+  INSTRUÇÕES DE ESTRUTURA PARA CADA FORMATO:
+
+  Se for "Storytelling" (Estilo "Lição Aprendida"):
   • Gancho: 1-2 linhas — uma dor, um erro, uma semana difícil. Para o scroll.
   • Contexto rápido: o que você estava tentando fazer
   • O problema real que apareceu
@@ -29,9 +31,7 @@ template: |
   • 1 linha filosófica de fechamento (tipo "Garbage in, garbage out")
   • CTA: pergunta aberta e real
 
-  ---
-  OPÇÃO 2: EDUCATIVO (Estilo "Como eu fiz na prática")
-  Estrutura:
+  Se for "Educativo" (Estilo "Como eu fiz na prática"):
   • Abertura: contexto do problema técnico em 2 linhas
   • Por que a abordagem óbvia não funciona
   • O fluxo que funcionou, usando "->" para cada etapa
@@ -39,13 +39,23 @@ template: |
   • 3 pontos aprendidos no processo (sem "->" aqui, em prosa curta)
   • CTA: pergunta sobre a experiência do leitor com aquele problema
 
-  ---
-  OPÇÃO 3: OPINIÃO (Estilo "O que ninguém fala sobre X")
-  Estrutura:
+  Se for "Opinião" (Estilo "O que ninguém fala sobre X"):
   • Afirmação que vai contra o senso comum (1 linha, sem rodeios)
   • Por que a maioria chega na conclusão errada
   • O argumento técnico com exemplo específico
   • Conclusão curta — máximo 2 linhas
   • CTA: provoca o leitor a discordar ou complementar
 
-  Comece direto em "OPÇÃO 1". Sem introduções.
+  IMPORTANTE: Gere EXATAMENTE 5 versões diferentes do post, de acordo com o formato "{tipo}". 
+  Use abordagens, ganchos e focos diferentes para cada versão.
+  Separe cada post usando exatamente o marcador:
+  
+  ---
+  OPÇÃO 1
+  [texto do post]
+
+  ---
+  OPÇÃO 2
+  [texto do post]
+
+  E assim por diante até a OPÇÃO 5. Não faça introduções, comece direto no marcador da OPÇÃO 1.

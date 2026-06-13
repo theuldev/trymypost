@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AutoPost LinkedIn — Gerador de Posts com IA</title>
+  <meta name="description" content="Gere posts profissionais para o LinkedIn com Inteligência Artificial. Pesquisa de tendências, criação de conteúdo, hashtags e revisão automática." />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <a href="/" class="logo">
+        <svg class="logo-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
+          <rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/>
+        </svg>
+        <span class="logo-text">AutoPost LinkedIn</span>
+      </a>
+      <div class="header-badge">
+        <span>Powered by Gemini AI</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="page-header">
+      <div class="page-badge">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"/>
+        </svg>
+        Gerador Inteligente de Conteúdo
+      </div>
+      <h1 class="page-title">Gere Posts Profissionais para o LinkedIn</h1>
+      <p class="page-subtitle">Pesquisa tendências, cria conteúdo engajante, sugere hashtags e revisa automaticamente — tudo com IA.</p>
+    </div>
+
+    <!-- PHASE 1: Topic Choice -->
+    <div id="phase-choice" class="form-card">
+      <div class="form-body">
+        <div class="form-group">
+          <div class="form-label-row">
+            <div class="step-badge">1</div>
+            <label class="form-label">Como você quer escolher o tema?</label>
+          </div>
+
+          <div class="choice-grid">
+            <button class="choice-card" id="btn-own-topic" onclick="showOwnTopic()">
+              <div class="choice-icon">✍️</div>
+              <div class="choice-title">Já tenho um tema</div>
+              <div class="choice-desc">Digite o assunto do seu post</div>
+            </button>
+            <button class="choice-card" id="btn-suggest-topics" onclick="showSuggestTopics()">
+              <div class="choice-icon">✨</div>
+              <div class="choice-title">Me sugira temas</div>
+              <div class="choice-desc">A IA pesquisa temas que engajam</div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PHASE 1a: Own Topic Input -->
+    <div id="phase-own" class="form-card" style="display:none;">
+      <div class="form-body">
+        <div class="form-group">
+          <div class="form-label-row">
+            <div class="step-badge">1</div>
+            <label class="form-label" for="topic-input">
+              Tema do Post<span class="required-star">*</span>
+            </label>
+          </div>
+          <input id="topic-input" class="form-input" type="text"
+            placeholder="Ex: Diferença entre Task, async e await em Python..."
+            autocomplete="off" />
+          <div class="char-hint" id="char-hint">Mínimo 10 caracteres</div>
+        </div>
+
+        <div class="form-group" style="margin-top:24px; margin-bottom:24px;">
+          <div class="form-label-row">
+            <label class="form-label">Formato do Post</label>
+          </div>
+          <div class="format-options">
+            <label class="format-card">
+              <input type="radio" name="postFormatOwn" value="Storytelling" checked>
+              <div class="format-card-content">
+                <strong>Storytelling</strong>
+                <span>História pessoal e envolvente</span>
+              </div>
+            </label>
+            <label class="format-card">
+              <input type="radio" name="postFormatOwn" value="Educativo">
+              <div class="format-card-content">
+                <strong>Educativo</strong>
+                <span>Dicas, tutoriais e listas</span>
+              </div>
+            </label>
+            <label class="format-card">
+              <input type="radio" name="postFormatOwn" value="Opinião">
+              <div class="format-card-content">
+                <strong>Opinião</strong>
+                <span>Debate e reflexão crítica</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-secondary" onclick="goBackToChoice()">← Voltar</button>
+          <button class="btn btn-primary" id="btn-generate-own" disabled onclick="startGeneration()">
+            Gerar Post com IA
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PHASE 1b: Suggest Topics -->
+    <div id="phase-suggest" class="form-card" style="display:none;">
+      <div class="form-body">
+        <div class="form-group">
+          <div class="form-label-row">
+            <div class="step-badge">1</div>
+            <label class="form-label" for="area-input">
+              Qual sua área?<span class="required-star">*</span>
+            </label>
+          </div>
+          <input id="area-input" class="form-input" type="text"
+            placeholder="Ex: Python, DevOps, Frontend, Cloud, IA..."
+            autocomplete="off" />
+          <div class="char-hint" id="area-hint">Mínimo 3 caracteres</div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-secondary" onclick="goBackToChoice()">← Voltar</button>
+          <button class="btn btn-primary" id="btn-search-topics" disabled onclick="searchTopics()">
+            <span id="search-label">Buscar Temas</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Topic suggestions result -->
+    <div id="phase-topics-result" style="display:none;">
+      <div class="form-card" style="margin-top:16px;">
+        <div class="form-body">
+          <div class="form-group">
+            <div class="form-label-row">
+              <div class="step-badge">2</div>
+              <label class="form-label">Escolha um tema</label>
+            </div>
+            <div class="topics-grid" id="topics-grid"></div>
+          </div>
+
+          <div class="form-group" style="margin-top:24px; margin-bottom:24px;">
+            <div class="form-label-row">
+              <label class="form-label">Formato do Post</label>
+            </div>
+            <div class="format-options">
+              <label class="format-card">
+                <input type="radio" name="postFormatSuggested" value="Storytelling" checked>
+                <div class="format-card-content">
+                  <strong>Storytelling</strong>
+                  <span>História pessoal e envolvente</span>
+                </div>
+              </label>
+              <label class="format-card">
+                <input type="radio" name="postFormatSuggested" value="Educativo">
+                <div class="format-card-content">
+                  <strong>Educativo</strong>
+                  <span>Dicas, tutoriais e listas</span>
+                </div>
+              </label>
+              <label class="format-card">
+                <input type="radio" name="postFormatSuggested" value="Opinião">
+                <div class="format-card-content">
+                  <strong>Opinião</strong>
+                  <span>Debate e reflexão crítica</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <button class="btn btn-primary" id="btn-generate-suggested" disabled onclick="startGeneration()">
+            Gerar Post com o Tema Selecionado
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="error-container"></div>
+
+    <!-- PHASE 2: Generation Progress -->
+    <div id="phase-progress" style="display:none;">
+      <div class="form-card" style="margin-top:24px;">
+        <div class="form-body">
+          <div class="selected-topic-bar" id="selected-topic-bar"></div>
+          <div class="progress-steps" id="progress-steps">
+            <div class="progress-step" id="step-research">
+              <div class="step-dot"></div>
+              <span>🔍 Pesquisando tendências na web...</span>
+            </div>
+            <div class="progress-step" id="step-post">
+              <div class="step-dot"></div>
+              <span>✍️ Gerando post...</span>
+            </div>
+            <div class="progress-step" id="step-hashtags">
+              <div class="step-dot"></div>
+              <span>#️⃣ Sugerindo hashtags...</span>
+            </div>
+            <div class="progress-step" id="step-review">
+              <div class="step-dot"></div>
+              <span>📋 Revisando o conteúdo...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PHASE 3: Results -->
+    <div id="phase-results" class="results-section" style="display:none;">
+
+      <div class="result-card">
+        <div class="result-card-header">
+          <div class="result-card-title">
+            <div class="result-icon">✍️</div>
+            <span>Post Gerado</span>
+          </div>
+          <button class="btn-copy" id="copy-post" onclick="copyText('post-content', 'copy-post')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+            </svg>
+            Copiar
+          </button>
+        </div>
+        <div class="result-content" id="post-content"></div>
+      </div>
+
+      <div class="result-card">
+        <div class="result-card-header">
+          <div class="result-card-title">
+            <div class="result-icon">#️⃣</div>
+            <span>Hashtags Sugeridas</span>
+          </div>
+          <button class="btn-copy" id="copy-hashtags" onclick="copyText('hashtags-raw', 'copy-hashtags')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+            </svg>
+            Copiar
+          </button>
+        </div>
+        <div class="hashtag-list" id="hashtag-list"></div>
+        <span id="hashtags-raw" style="display:none;"></span>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:12px; margin-top:8px;">
+        <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+            <label class="form-label" style="margin:0;">Formato:</label>
+            <select id="regen-format" class="form-input" style="max-width:200px; margin-bottom:0;">
+                <option value="Storytelling">Storytelling</option>
+                <option value="Educativo">Educativo</option>
+                <option value="Opinião">Opinião</option>
+            </select>
+        </div>
+        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+            <button class="btn btn-secondary" style="flex:1; min-width:200px;" onclick="startGeneration()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            Gerar de novo
+            </button>
+            <button class="btn btn-secondary" style="flex:1; min-width:200px;" onclick="resetAll()">
+            ← Escolher Novo Tema
+            </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>Feito com ❤️ usando <a href="https://python.langchain.com" target="_blank">LangChain</a> + <a href="https://deepmind.google/technologies/gemini/" target="_blank">Gemini AI</a></p>
+  </footer>
+
+  <script>
+    let selectedTopic = '';
+
+    const topicInput = document.getElementById('topic-input');
+    const areaInput = document.getElementById('area-input');
+    const charHint = document.getElementById('char-hint');
+    const areaHint = document.getElementById('area-hint');
+    const btnGenerateOwn = document.getElementById('btn-generate-own');
+    const btnSearchTopics = document.getElementById('btn-search-topics');
+    const btnGenerateSuggested = document.getElementById('btn-generate-suggested');
+
+    topicInput.addEventListener('input', () => {
+      const len = topicInput.value.trim().length;
+      const ready = len >= 10;
+      btnGenerateOwn.disabled = !ready;
+      charHint.textContent = ready ? `${len} caracteres ✓` : `Mínimo 10 caracteres (${len} / 10)`;
+      charHint.className = 'char-hint' + (ready ? ' ready' : '');
+    });
+
+    topicInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !btnGenerateOwn.disabled) startGeneration();
+    });
+
+    areaInput.addEventListener('input', () => {
+      const len = areaInput.value.trim().length;
+      const ready = len >= 3;
+      btnSearchTopics.disabled = !ready;
+      areaHint.textContent = ready ? `${len} caracteres ✓` : `Mínimo 3 caracteres (${len} / 3)`;
+      areaHint.className = 'char-hint' + (ready ? ' ready' : '');
+    });
+
+    areaInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !btnSearchTopics.disabled) searchTopics();
+    });
+
+    function showPhase(id) {
+      ['phase-choice', 'phase-own', 'phase-suggest', 'phase-topics-result', 'phase-progress', 'phase-results'].forEach(p => {
+        document.getElementById(p).style.display = 'none';
+      });
+      document.getElementById('error-container').innerHTML = '';
+      document.getElementById(id).style.display = id === 'phase-results' ? 'flex' : 'block';
+    }
+
+    function showOwnTopic() {
+      showPhase('phase-own');
+      topicInput.focus();
+    }
+
+    function showSuggestTopics() {
+      showPhase('phase-suggest');
+      areaInput.focus();
+    }
+
+    function goBackToChoice() {
+      showPhase('phase-choice');
+    }
+
+    function resetAll() {
+      selectedTopic = '';
+      topicInput.value = '';
+      areaInput.value = '';
+      btnGenerateOwn.disabled = true;
+      btnSearchTopics.disabled = true;
+      btnGenerateSuggested.disabled = true;
+      charHint.textContent = 'Mínimo 10 caracteres';
+      charHint.className = 'char-hint';
+      areaHint.textContent = 'Mínimo 3 caracteres';
+      areaHint.className = 'char-hint';
+      document.getElementById('topics-grid').innerHTML = '';
+      document.getElementById('phase-topics-result').style.display = 'none';
+      showPhase('phase-choice');
+    }
+
+    async function searchTopics() {
+      const area = areaInput.value.trim();
+      if (area.length < 3) return;
+
+      const searchLabel = document.getElementById('search-label');
+      btnSearchTopics.disabled = true;
+      searchLabel.textContent = 'Buscando...';
+      const spinner = document.createElement('div');
+      spinner.className = 'spinner';
+      btnSearchTopics.prepend(spinner);
+      document.getElementById('error-container').innerHTML = '';
+
+      try {
+        const resp = await fetch('/suggest-topics', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ area })
+        });
+
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({ error: 'Erro desconhecido' }));
+          throw new Error(err.error || `HTTP ${resp.status}`);
+        }
+
+        const data = await resp.json();
+
+        if (data.error && (!data.topics || data.topics.length === 0)) {
+          throw new Error(data.error);
+        }
+
+        const grid = document.getElementById('topics-grid');
+        grid.innerHTML = '';
+
+        (data.topics || []).forEach((topic, i) => {
+          const card = document.createElement('button');
+          card.className = 'topic-card';
+          card.setAttribute('data-topic', topic.title);
+          card.innerHTML = `
+            <div class="topic-radio"><div class="topic-radio-dot"></div></div>
+            <div class="topic-info">
+              <div class="topic-title">${topic.title}</div>
+              <div class="topic-desc">${topic.description}</div>
+            </div>
+          `;
+          card.addEventListener('click', () => selectTopic(card, topic.title));
+          grid.appendChild(card);
+        });
+
+        document.getElementById('phase-topics-result').style.display = 'block';
+
+      } catch (err) {
+        document.getElementById('error-container').innerHTML = `
+          <div class="error-banner" style="margin-top:16px;">
+            <span class="error-icon">⚠️</span>
+            <div><strong>Erro ao buscar temas</strong><br><span style="opacity:0.8;">${err.message}</span></div>
+          </div>
+        `;
+      } finally {
+        spinner.remove();
+        searchLabel.textContent = 'Buscar Temas';
+        btnSearchTopics.disabled = areaInput.value.trim().length < 3;
+      }
+    }
+
+    function selectTopic(card, title) {
+      document.querySelectorAll('.topic-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      selectedTopic = title;
+      btnGenerateSuggested.disabled = false;
+    }
+
+    function startGeneration() {
+      const topic = selectedTopic || topicInput.value.trim();
+      if (topic.length < 10) return;
+
+      let format = 'Storytelling';
+      const resultsPhase = document.getElementById('phase-results');
+      if (resultsPhase && resultsPhase.style.display !== 'none') {
+        const regenSelect = document.getElementById('regen-format');
+        if (regenSelect) format = regenSelect.value;
+      } else if (selectedTopic) {
+        const checked = document.querySelector('input[name="postFormatSuggested"]:checked');
+        if (checked) format = checked.value;
+      } else {
+        const checked = document.querySelector('input[name="postFormatOwn"]:checked');
+        if (checked) format = checked.value;
+      }
+
+      document.getElementById('error-container').innerHTML = '';
+      showPhase('phase-progress');
+
+      document.getElementById('selected-topic-bar').textContent = `Tema: ${topic} | Formato: ${format}`;
+
+      ['step-research', 'step-post', 'step-hashtags', 'step-review'].forEach(id => {
+        document.getElementById(id).className = 'progress-step';
+      });
+
+      const evtSource = new EventSource(`/generate?tema=${encodeURIComponent(topic)}&tipo=${encodeURIComponent(format)}`);
+
+      evtSource.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+
+        if (data.step === 'error') {
+          evtSource.close();
+          showPhase('phase-choice');
+          document.getElementById('error-container').innerHTML = `
+            <div class="error-banner" style="margin-top:16px;">
+              <span class="error-icon">⚠️</span>
+              <div><strong>Erro ao gerar post</strong><br><span style="opacity:0.8;">${data.error}</span></div>
+            </div>
+          `;
+          return;
+        }
+
+        if (data.step === 'complete') {
+          evtSource.close();
+
+          const result = data.result;
+          
+          const postText = result.post || '';
+          const revText = result.revisao || '';
+          
+          const parseBlocks = (text, regexPattern) => {
+              let blocks = [];
+              let currentBlock = [];
+              for (let line of text.split('\n')) {
+                  if (regexPattern.test(line.trim())) {
+                      if (currentBlock.length > 0) blocks.push(currentBlock.join('\n'));
+                      currentBlock = [line];
+                  } else {
+                      currentBlock.push(line);
+                  }
+              }
+              if (currentBlock.length > 0) blocks.push(currentBlock.join('\n'));
+              return blocks.filter(b => b.replace(/---|#+/g, '').trim().length > 15);
+          };
+
+          let options = parseBlocks(postText, /^(?:---|#+)?\s*OPÇÃO\s*\d+/i);
+          if (options.length === 0) options = [postText];
+
+          let reviewOptions = parseBlocks(revText, /^(?:---|#+)?\s*REVISÃO\s*(?:DA\s*)?OPÇÃO\s*\d+/i);
+          if (reviewOptions.length === 0) reviewOptions = [revText];
+          
+          const container = document.getElementById('post-content');
+          container.innerHTML = '';
+          
+          if (options.length > 1 && options.some(o => o.toUpperCase().includes('OPÇÃO'))) {
+            const tabsContainer = document.createElement('div');
+            tabsContainer.className = 'post-tabs';
+            const contentContainer = document.createElement('div');
+            contentContainer.className = 'post-tab-contents';
+            
+            let validIdx = 0;
+            options.forEach((opt, idx) => {
+              const txt = opt.trim();
+              if (!txt) return;
+              
+              let title = `Opção ${validIdx + 1}`;
+              let content = txt;
+              
+              const lines = txt.split('\n');
+              if (lines[0].toUpperCase().includes('OPÇÃO')) {
+                title = lines[0].replace(/(?:---|#+)?\s*OPÇÃO\s*\d+:\s*/i, '').replace(/---/g, '').trim() || title;
+                content = lines.slice(1).join('\n').trim();
+              }
+              
+              const btn = document.createElement('button');
+              btn.className = `post-tab-btn ${validIdx === 0 ? 'active' : ''}`;
+              btn.textContent = title;
+              
+              const pane = document.createElement('div');
+              pane.className = `post-tab-pane ${validIdx === 0 ? 'active' : ''}`;
+              
+              const postNode = document.createElement('div');
+              postNode.textContent = content;
+              pane.appendChild(postNode);
+              
+              if (reviewOptions[idx]) {
+                let rTxt = reviewOptions[idx].trim();
+                if (rTxt) {
+                   const rLines = rTxt.split('\n');
+                   if (rLines[0].toUpperCase().includes('REVISÃO') || rLines[0].toUpperCase().includes('OPÇÃO')) {
+                     rTxt = rLines.slice(1).join('\n').trim();
+                   }
+                   
+                   const reviewDivider = document.createElement('div');
+                   reviewDivider.style.marginTop = '24px';
+                   reviewDivider.style.paddingTop = '16px';
+                   reviewDivider.style.borderTop = '1px dashed var(--border)';
+                   reviewDivider.style.color = 'var(--text-secondary)';
+                   
+                   const reviewTitle = document.createElement('strong');
+                   reviewTitle.style.display = 'flex';
+                   reviewTitle.style.alignItems = 'center';
+                   reviewTitle.style.gap = '6px';
+                   reviewTitle.style.marginBottom = '8px';
+                   reviewTitle.style.color = 'var(--text-primary)';
+                   reviewTitle.innerHTML = '📋 Revisão da IA:';
+                   
+                   const reviewTextNode = document.createElement('div');
+                   reviewTextNode.textContent = rTxt;
+                   
+                   reviewDivider.appendChild(reviewTitle);
+                   reviewDivider.appendChild(reviewTextNode);
+                   pane.appendChild(reviewDivider);
+                }
+              }
+              
+              btn.onclick = () => {
+                tabsContainer.querySelectorAll('.post-tab-btn').forEach(b => b.classList.remove('active'));
+                contentContainer.querySelectorAll('.post-tab-pane').forEach(p => p.classList.remove('active'));
+                btn.classList.add('active');
+                pane.classList.add('active');
+                window.currentVisiblePostPane = postNode;
+              };
+              
+              tabsContainer.appendChild(btn);
+              contentContainer.appendChild(pane);
+              
+              if (validIdx === 0) window.currentVisiblePostPane = postNode;
+              validIdx++;
+            });
+            
+            container.appendChild(tabsContainer);
+            container.appendChild(contentContainer);
+          } else {
+            const postNode = document.createElement('div');
+            postNode.textContent = postText;
+            container.appendChild(postNode);
+            
+            if (revText) {
+               const reviewDivider = document.createElement('div');
+               reviewDivider.style.marginTop = '24px';
+               reviewDivider.style.paddingTop = '16px';
+               reviewDivider.style.borderTop = '1px dashed var(--border)';
+               reviewDivider.style.color = 'var(--text-secondary)';
+               
+               const reviewTitle = document.createElement('strong');
+               reviewTitle.style.display = 'flex';
+               reviewTitle.style.alignItems = 'center';
+               reviewTitle.style.gap = '6px';
+               reviewTitle.style.marginBottom = '8px';
+               reviewTitle.style.color = 'var(--text-primary)';
+               reviewTitle.innerHTML = '📋 Revisão da IA:';
+               
+               const reviewTextNode = document.createElement('div');
+               let cleanRevText = revText.trim();
+               const revLines = cleanRevText.split('\n');
+               if (revLines[0].toUpperCase().includes('REVISÃO')) {
+                   cleanRevText = revLines.slice(1).join('\n').trim();
+               }
+               reviewTextNode.textContent = cleanRevText;
+               
+               reviewDivider.appendChild(reviewTitle);
+               reviewDivider.appendChild(reviewTextNode);
+               container.appendChild(reviewDivider);
+            }
+            window.currentVisiblePostPane = postNode;
+          }
+
+          const raw = result.hashtags || '';
+          document.getElementById('hashtags-raw').textContent = raw;
+          const hashList = document.getElementById('hashtag-list');
+          hashList.innerHTML = '';
+          raw.split(/\s+/).filter(h => h.startsWith('#')).forEach(tag => {
+            const chip = document.createElement('span');
+            chip.className = 'hashtag-chip';
+            chip.textContent = tag;
+            hashList.appendChild(chip);
+          });
+
+          if (hashList.children.length === 0) {
+            hashList.innerHTML = `<span class="result-content" style="padding:0;">${raw}</span>`;
+          }
+
+          showPhase('phase-results');
+          return;
+        }
+
+        const stepEl = document.getElementById(`step-${data.step}`);
+        if (stepEl) {
+          stepEl.className = `progress-step ${data.status}`;
+        }
+      };
+
+      evtSource.onerror = (e) => {
+        evtSource.close();
+        showPhase('phase-choice');
+        document.getElementById('error-container').innerHTML = `
+          <div class="error-banner" style="margin-top:16px;">
+            <span class="error-icon">⚠️</span>
+            <div><strong>Erro de Conexão</strong><br><span style="opacity:0.8;">A comunicação com o servidor falhou ou o tempo limite foi excedido.</span></div>
+          </div>
+        `;
+      };
+    }
+
+    function copyText(sourceId, btnId) {
+      let text = '';
+      if (sourceId === 'post-content' && window.currentVisiblePostPane) {
+        text = window.currentVisiblePostPane.textContent;
+      } else {
+        text = document.getElementById(sourceId).textContent;
+      }
+      
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById(btnId);
+        btn.classList.add('copied');
+        const prev = btn.innerHTML;
+        btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copiado!`;
+        setTimeout(() => {
+          btn.innerHTML = prev;
+          btn.classList.remove('copied');
+        }, 2000);
+      });
+    }
+  </script>
+
+</body>
+</html>

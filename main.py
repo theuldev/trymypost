@@ -15,7 +15,7 @@ hashtag_suggestor_prompt = load_prompt(PromptManager.HASHTAG_SUGGESTOR)
 post_reviewer_prompt     = load_prompt(PromptManager.POST_REVIEWER)
 
 llm = ChatGoogleGenerativeAI(
-    model="gemini-2.0-flash",
+    model="gemini-3.5-flash",
     google_api_key=os.getenv("GOOGLE_API_KEY"),
 )
 output_parser = StrOutputParser()
@@ -77,7 +77,7 @@ post_analysis_chain = (
 chain = research_chain | post_analysis_chain
 
 if __name__ == "__main__":
-    topic = "Migração WebForms para MVC"
+    topic = "Diferença entre Task, async e await (explicado simples)"
     result = chain.invoke({"tema": topic})
 
     print("=" * 60)
