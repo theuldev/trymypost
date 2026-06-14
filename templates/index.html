@@ -71,10 +71,10 @@
               Tema do Post<span class="required-star">*</span>
             </label>
           </div>
-          <input id="topic-input" class="form-input" type="text"
+           <input id="topic-input" class="form-input" type="text"
             placeholder="Ex: Diferença entre Task, async e await em Python..."
             autocomplete="off" />
-          <div class="char-hint" id="char-hint">Mínimo 10 caracteres</div>
+          <div class="char-hint" id="char-hint">O tema é obrigatório *</div>
         </div>
 
         <div class="form-group" style="margin-top:24px; margin-bottom:24px;">
@@ -103,6 +103,13 @@
                 <span>Debate e reflexão crítica</span>
               </div>
             </label>
+            <label class="format-card">
+              <input type="radio" name="postFormatOwn" value="Informativo">
+              <div class="format-card-content">
+                <strong>Informativo</strong>
+                <span>Estilo documentação técnica</span>
+              </div>
+            </label>
           </div>
         </div>
 
@@ -115,7 +122,6 @@
       </div>
     </div>
 
-    <!-- PHASE 1b: Suggest Topics -->
     <div id="phase-suggest" class="form-card" style="display:none;">
       <div class="form-body">
         <div class="form-group">
@@ -128,7 +134,7 @@
           <input id="area-input" class="form-input" type="text"
             placeholder="Ex: Python, DevOps, Frontend, Cloud, IA..."
             autocomplete="off" />
-          <div class="char-hint" id="area-hint">Mínimo 3 caracteres</div>
+          <div class="char-hint" id="area-hint">Sua área é obrigatória para sugerir temas ✨</div>
         </div>
 
         <div class="form-actions">
@@ -178,6 +184,13 @@
                   <span>Debate e reflexão crítica</span>
                 </div>
               </label>
+              <label class="format-card">
+                <input type="radio" name="postFormatSuggested" value="Informativo">
+                <div class="format-card-content">
+                  <strong>Informativo</strong>
+                  <span>Estilo documentação técnica</span>
+                </div>
+              </label>
             </div>
           </div>
 
@@ -225,6 +238,7 @@
           <div class="result-card-title">
             <div class="result-icon">✍️</div>
             <span>Post Gerado</span>
+            <span id="char-counter" style="font-size:0.72rem; font-weight:500; color:var(--text-muted); margin-left:8px;"></span>
           </div>
           <button class="btn-copy" id="copy-post" onclick="copyText('post-content', 'copy-post')">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -260,6 +274,7 @@
                 <option value="Storytelling">Storytelling</option>
                 <option value="Educativo">Educativo</option>
                 <option value="Opinião">Opinião</option>
+                <option value="Informativo">Informativo</option>
             </select>
         </div>
         <div style="display:flex; gap:12px; flex-wrap:wrap;">
@@ -292,9 +307,9 @@
 
     topicInput.addEventListener('input', () => {
       const len = topicInput.value.trim().length;
-      const ready = len >= 10;
+      const ready = len > 0;
       btnGenerateOwn.disabled = !ready;
-      charHint.textContent = ready ? `${len} caracteres ✓` : `Mínimo 10 caracteres (${len} / 10)`;
+      charHint.textContent = ready ? 'Tema preenchido! ✓' : 'O tema é obrigatório *';
       charHint.className = 'char-hint' + (ready ? ' ready' : '');
     });
 
@@ -304,9 +319,9 @@
 
     areaInput.addEventListener('input', () => {
       const len = areaInput.value.trim().length;
-      const ready = len >= 3;
+      const ready = len > 0;
       btnSearchTopics.disabled = !ready;
-      areaHint.textContent = ready ? `${len} caracteres ✓` : `Mínimo 3 caracteres (${len} / 3)`;
+      areaHint.textContent = ready ? 'Área definida! ✓' : 'Sua área é obrigatória para sugerir temas ✨';
       areaHint.className = 'char-hint' + (ready ? ' ready' : '');
     });
 
@@ -343,9 +358,9 @@
       btnGenerateOwn.disabled = true;
       btnSearchTopics.disabled = true;
       btnGenerateSuggested.disabled = true;
-      charHint.textContent = 'Mínimo 10 caracteres';
+      charHint.textContent = 'O tema é obrigatório *';
       charHint.className = 'char-hint';
-      areaHint.textContent = 'Mínimo 3 caracteres';
+      areaHint.textContent = 'Sua área é obrigatória para sugerir temas ✨';
       areaHint.className = 'char-hint';
       document.getElementById('topics-grid').innerHTML = '';
       document.getElementById('phase-topics-result').style.display = 'none';
@@ -354,7 +369,7 @@
 
     async function searchTopics() {
       const area = areaInput.value.trim();
-      if (area.length < 3) return;
+      if (area.length === 0) return;
 
       const searchLabel = document.getElementById('search-label');
       btnSearchTopics.disabled = true;
@@ -412,7 +427,7 @@
       } finally {
         spinner.remove();
         searchLabel.textContent = 'Buscar Temas';
-        btnSearchTopics.disabled = areaInput.value.trim().length < 3;
+        btnSearchTopics.disabled = areaInput.value.trim().length === 0;
       }
     }
 
@@ -423,9 +438,23 @@
       btnGenerateSuggested.disabled = false;
     }
 
+    let lastUsedFormat = 'Storytelling';
+
+    function updateCharCounter(text) {
+      const counter = document.getElementById('char-counter');
+      if (counter && text) {
+        const len = text.length;
+        let color = 'var(--text-muted)';
+        if (len > 2500) color = '#f59e0b';
+        if (len > 3000) color = 'var(--destructive)';
+        counter.textContent = `${len} caracteres`;
+        counter.style.color = color;
+      }
+    }
+
     function startGeneration() {
       const topic = selectedTopic || topicInput.value.trim();
-      if (topic.length < 10) return;
+      if (topic.length === 0) return;
 
       let format = 'Storytelling';
       const resultsPhase = document.getElementById('phase-results');
@@ -439,6 +468,8 @@
         const checked = document.querySelector('input[name="postFormatOwn"]:checked');
         if (checked) format = checked.value;
       }
+
+      lastUsedFormat = format;
 
       document.getElementById('error-container').innerHTML = '';
       showPhase('phase-progress');
@@ -468,81 +499,53 @@
 
         if (data.step === 'complete') {
           evtSource.close();
-
           const result = data.result;
-          
-          const postText = result.post || '';
-          const revText = result.revisao || '';
-          
-          const parseBlocks = (text, regexPattern) => {
-              let blocks = [];
-              let currentBlock = [];
-              for (let line of text.split('\n')) {
-                  if (regexPattern.test(line.trim())) {
-                      if (currentBlock.length > 0) blocks.push(currentBlock.join('\n'));
-                      currentBlock = [line];
-                  } else {
-                      currentBlock.push(line);
-                  }
-              }
-              if (currentBlock.length > 0) blocks.push(currentBlock.join('\n'));
-              return blocks.filter(b => b.replace(/---|#+/g, '').trim().length > 15);
-          };
-
-          let options = parseBlocks(postText, /^(?:---|#+)?\s*OPÇÃO\s*\d+/i);
-          if (options.length === 0) options = [postText];
-
-          let reviewOptions = parseBlocks(revText, /^(?:---|#+)?\s*REVISÃO\s*(?:DA\s*)?OPÇÃO\s*\d+/i);
-          if (reviewOptions.length === 0) reviewOptions = [revText];
-          
+          const posts = result.posts || [];
+          const revisoes = result.revisoes || [];
           const container = document.getElementById('post-content');
           container.innerHTML = '';
-          
-          if (options.length > 1 && options.some(o => o.toUpperCase().includes('OPÇÃO'))) {
+          if (posts.length > 0) {
             const tabsContainer = document.createElement('div');
             tabsContainer.className = 'post-tabs';
             const contentContainer = document.createElement('div');
             contentContainer.className = 'post-tab-contents';
-            
-            let validIdx = 0;
-            options.forEach((opt, idx) => {
-              const txt = opt.trim();
-              if (!txt) return;
-              
-              let title = `Opção ${validIdx + 1}`;
-              let content = txt;
-              
-              const lines = txt.split('\n');
-              if (lines[0].toUpperCase().includes('OPÇÃO')) {
-                title = lines[0].replace(/(?:---|#+)?\s*OPÇÃO\s*\d+:\s*/i, '').replace(/---/g, '').trim() || title;
-                content = lines.slice(1).join('\n').trim();
-              }
-              
+            posts.forEach((item, idx) => {
+              const content = (item.post || '').trim();
+              const angulo = (item.angulo || '').trim();
               const btn = document.createElement('button');
-              btn.className = `post-tab-btn ${validIdx === 0 ? 'active' : ''}`;
-              btn.textContent = title;
-              
+              btn.className = `post-tab-btn ${idx === 0 ? 'active' : ''}`;
+              btn.textContent = `Opção ${idx + 1}`;
               const pane = document.createElement('div');
-              pane.className = `post-tab-pane ${validIdx === 0 ? 'active' : ''}`;
-              
+              pane.className = `post-tab-pane ${idx === 0 ? 'active' : ''}`;
+              const metaHeader = document.createElement('div');
+              metaHeader.style.marginBottom = '16px';
+              metaHeader.style.padding = '8px 12px';
+              metaHeader.style.backgroundColor = 'var(--bg-secondary, #f3f4f6)';
+              metaHeader.style.borderRadius = '6px';
+              metaHeader.style.fontSize = '0.85rem';
+              metaHeader.style.borderLeft = '4px solid var(--primary, #2563eb)';
+              metaHeader.style.display = 'flex';
+              metaHeader.style.flexDirection = 'column';
+              metaHeader.style.gap = '4px';
+              metaHeader.innerHTML = `
+                <div><strong>Tema:</strong> ${topic}</div>
+                ${angulo ? `<div><strong>Ângulo:</strong> ${angulo}</div>` : ''}
+              `;
+              pane.appendChild(metaHeader);
               const postNode = document.createElement('div');
+              postNode.style.whiteSpace = 'pre-wrap';
               postNode.textContent = content;
+              if (idx === 0) updateCharCounter(content);
               pane.appendChild(postNode);
-              
-              if (reviewOptions[idx]) {
-                let rTxt = reviewOptions[idx].trim();
+              const revItem = revisoes[idx] || revisoes.find(r => r.angulo === item.angulo);
+              if (revItem) {
+                const rTxt = (revItem.revisao || '').trim();
                 if (rTxt) {
-                   const rLines = rTxt.split('\n');
-                   if (rLines[0].toUpperCase().includes('REVISÃO') || rLines[0].toUpperCase().includes('OPÇÃO')) {
-                     rTxt = rLines.slice(1).join('\n').trim();
-                   }
-                   
                    const reviewDivider = document.createElement('div');
                    reviewDivider.style.marginTop = '24px';
                    reviewDivider.style.paddingTop = '16px';
                    reviewDivider.style.borderTop = '1px dashed var(--border)';
                    reviewDivider.style.color = 'var(--text-secondary)';
-                   
                    const reviewTitle = document.createElement('strong');
                    reviewTitle.style.display = 'flex';
                    reviewTitle.style.alignItems = 'center';
@@ -550,66 +553,30 @@
                    reviewTitle.style.marginBottom = '8px';
                    reviewTitle.style.color = 'var(--text-primary)';
                    reviewTitle.innerHTML = '📋 Revisão da IA:';
-                   
                    const reviewTextNode = document.createElement('div');
+                   reviewTextNode.style.whiteSpace = 'pre-wrap';
                    reviewTextNode.textContent = rTxt;
-                   
                    reviewDivider.appendChild(reviewTitle);
                    reviewDivider.appendChild(reviewTextNode);
                    pane.appendChild(reviewDivider);
                 }
               }
-              
               btn.onclick = () => {
                 tabsContainer.querySelectorAll('.post-tab-btn').forEach(b => b.classList.remove('active'));
                 contentContainer.querySelectorAll('.post-tab-pane').forEach(p => p.classList.remove('active'));
                 btn.classList.add('active');
                 pane.classList.add('active');
                 window.currentVisiblePostPane = postNode;
+                updateCharCounter(content);
               };
-              
               tabsContainer.appendChild(btn);
               contentContainer.appendChild(pane);
-              
-              if (validIdx === 0) window.currentVisiblePostPane = postNode;
-              validIdx++;
+              if (idx === 0) window.currentVisiblePostPane = postNode;
             });
-            
             container.appendChild(tabsContainer);
             container.appendChild(contentContainer);
           } else {
-            const postNode = document.createElement('div');
-            postNode.textContent = postText;
-            container.appendChild(postNode);
-            
-            if (revText) {
-               const reviewDivider = document.createElement('div');
-               reviewDivider.style.marginTop = '24px';
-               reviewDivider.style.paddingTop = '16px';
-               reviewDivider.style.borderTop = '1px dashed var(--border)';
-               reviewDivider.style.color = 'var(--text-secondary)';
-               
-               const reviewTitle = document.createElement('strong');
-               reviewTitle.style.display = 'flex';
-               reviewTitle.style.alignItems = 'center';
-               reviewTitle.style.gap = '6px';
-               reviewTitle.style.marginBottom = '8px';
-               reviewTitle.style.color = 'var(--text-primary)';
-               reviewTitle.innerHTML = '📋 Revisão da IA:';
-               
-               const reviewTextNode = document.createElement('div');
-               let cleanRevText = revText.trim();
-               const revLines = cleanRevText.split('\n');
-               if (revLines[0].toUpperCase().includes('REVISÃO')) {
-                   cleanRevText = revLines.slice(1).join('\n').trim();
-               }
-               reviewTextNode.textContent = cleanRevText;
-               
-               reviewDivider.appendChild(reviewTitle);
-               reviewDivider.appendChild(reviewTextNode);
-               container.appendChild(reviewDivider);
-            }
-            window.currentVisiblePostPane = postNode;
+            container.innerHTML = '<p>Nenhum post foi gerado.</p>';
           }
 
           const raw = result.hashtags || '';
@@ -626,6 +593,9 @@
           if (hashList.children.length === 0) {
             hashList.innerHTML = `<span class="result-content" style="padding:0;">${raw}</span>`;
           }
+
+          const regenSelect = document.getElementById('regen-format');
+          if (regenSelect) regenSelect.value = lastUsedFormat;
 
           showPhase('phase-results');
           return;

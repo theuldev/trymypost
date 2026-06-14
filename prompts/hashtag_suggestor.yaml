@@ -2,9 +2,15 @@ _type: prompt
 input_variables:
   ["conteudo_post"]
 template: |
-  Analise o seguinte post:
+  Analise o seguinte post técnico para LinkedIn:
   "{conteudo_post}"
-  
-  Sugira as 5 hashtags mais relevantes para aumentar o alcance deste conteúdo no LinkedIn.
-  Considere hashtags de nicho e hashtags amplas.
-  Retorne apenas as hashtags separadas por espaço.
+
+  Sugira entre 8 e 10 hashtags otimizadas para maximizar o alcance deste conteúdo no LinkedIn.
+
+  Regras:
+  - Inclua 2-3 hashtags amplas em inglês (ex: #SoftwareEngineering, #Backend, #WebDev)
+  - Inclua 2-3 hashtags de nicho técnico (ex: #DotNet, #AsyncAwait, #EntityFramework)
+  - Inclua 2-3 hashtags em português voltadas para a comunidade brasileira (ex: #DesenvolvimentoDeSoftware, #ProgramaçãoBR, #TechBR)
+  - Priorize hashtags que realmente são usadas no LinkedIn (não invente hashtags obscuras)
+
+  Retorne apenas as hashtags separadas por espaço, sem numeração ou explicações.
