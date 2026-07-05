@@ -15,7 +15,7 @@ load_dotenv()
 
 app = Flask(__name__)
 
-TIPOS_VALIDOS = {"STORYTELLING", "EDUCATIVO", "OPINIAO", "INFORMATIVO"}
+TIPOS_VALIDOS = {"STORYTELLING", "EDUCATIVO", "OPINIAO", "INFORMATIVO", "COMPARATIVO", "EXPLICATIVO"}
 
 
 def normalize_tipo(tipo):
@@ -43,7 +43,8 @@ INSTRUCOES_ESTRUTURA = {
         "- CTA: uma pergunta curta e genuína sobre a experiência do leitor com esse tipo de problema."
     ),
     "EDUCATIVO": (
-        "- Abre com o problema técnico como ele aparece na prática — não como título de artigo. Uma frase.\n"
+        "- SEMPRE parte de um problema real que apareceu primeiro — uma dor concreta vivida antes de existir solução. "
+        "Abre com isso em uma frase, como ele aparece na prática, não como título de artigo.\n"
         "- Explica por que a solução óbvia não funciona, como se estivesse contando o raciocínio que você mesmo "
         "teve antes de entender direito.\n"
         "- Descreve o que resolveu em prosa, falando diretamente com o leitor ('você', 'a gente'). "
@@ -57,23 +58,56 @@ INSTRUCOES_ESTRUTURA = {
         "- Primeira linha: a tese limpa. Sem qualificação, sem 'mas depende'. "
         "Uma afirmação que alguém pode discordar de cara.\n"
         "- Explica por que a maioria chega na conclusão errada — com empatia, não com superioridade. "
-        "Você já pensou errado também, e isso aparece no texto.\n"
+        "Pode reconhecer que essa visão errada é comum e compreensível, sem precisar se incluir nela.\n"
         "- Traz o argumento técnico com um exemplo real e específico: ferramenta real, erro real, número real. "
         "Nada genérico, nada hipotético.\n"
         "- Conclusão em uma frase. Sem expandir, sem repetir o que já disse.\n"
         "- CTA provocativo: convide quem discorda ou quem quer complementar — não quem vai só concordar."
     ),
     "INFORMATIVO": (
-        "- Abre com uma situação prática onde o conceito aparece — não com definição. "
-        "O leitor precisa entender por que aquilo existe antes de saber o que é.\n"
-        "- Explica o que é em prosa coloquial, falando diretamente com o leitor. "
-        "Como você explicaria numa call rápida de 2 minutos, não num README.\n"
-        "- Mostra como funciona com exemplos concretos em prosa. "
+        "- NÃO existe problema disparador nem comparação com outra tecnologia — é puramente explicativo. "
+        "Abre com uma situação prática onde o conceito aparece, descrita na 3ª pessoa ou de forma impessoal "
+        "(ex: 'Quando uma API precisa lidar com milhares de eventos por segundo...'), sem usar 'eu' ou relato pessoal.\n"
+        "- Explica o que é a tecnologia/conceito em prosa coloquial e direta, como quem explica pra alguém que nunca ouviu falar. "
+        "Pode falar com o leitor via 'você' quando fizer sentido pedagógico, mas sem narrar experiência própria — "
+        "é explicação, não memória.\n"
+        "- Mostra como funciona por dentro, em prosa: o mecanismo, o fluxo, as peças que interagem. "
         "Use '->' só se as etapas forem realmente sequenciais e dependentes de ordem — não como formatação.\n"
-        "- Quando faz sentido usar e quando não faz — com exemplos do mundo real, não cenários genéricos.\n"
-        "- Fecha com o erro mais comum que você vê ou já cometeu com esse conceito. "
-        "Uma frase seca, sem tom de lista.\n"
-        "- CTA: pergunta sobre como o leitor usa isso no dia a dia ou se já caiu em alguma armadilha parecida."
+        "- Quando faz sentido usar essa tecnologia e quando não faz, com exemplos reais de cenário — "
+        "sem comparar com uma alternativa específica (isso é função do Comparativo).\n"
+        "- Fecha com o erro mais comum cometido ao usar esse conceito, descrito de forma impessoal "
+        "(ex: 'o erro mais comum é usar X sem precisar do Y que ele resolve'). Uma frase seca, sem tom de lista.\n"
+        "- CTA: pergunta direta ao leitor sobre como ele usa isso no dia a dia ou se já caiu em alguma armadilha parecida. "
+        "A pessoalidade fica reservada ao CTA — o corpo do texto é sempre explicativo e impessoal."
+    ),
+    "COMPARATIVO": (
+        "- Abre nomeando as duas opções em conflito direto — uma linha, sem enrolação. "
+        "Algo como 'X ou Y: a escolha errada custa caro' ou citando as duas ferramentas/abordagens já na primeira frase.\n"
+        "- Explica o critério que a maioria usa pra decidir (geralmente errado ou raso — "
+        "'mais rápido', 'mais moderno', 'todo mundo usa') antes de mostrar o critério que realmente importa.\n"
+        "- Compara as duas opções em prosa, ponto a ponto, com exemplo real de cada uma "
+        "(comportamento observado, número, caso de uso real). Evite tabela — o leitor tem que sentir a diferença lendo, não escaneando.\n"
+        "- Aponta quando cada uma vence — sem ficar em cima do muro. "
+        "Pode (e deve) dizer que uma das opções é melhor na maioria dos casos do tema do post.\n"
+        "- Fecha com a armadilha mais comum: escolher pelo critério errado ou usar a opção errada fora do contexto certo.\n"
+        "- CTA: pergunte qual das duas o leitor usa e por quê — formato que convida quem usa a outra a defender a escolha."
+    ),
+    "EXPLICATIVO": (
+        "- Abre com uma pergunta direta sobre o conceito, do tipo 'O que é X que aparece em Y?' "
+        "ou 'Já parou pra pensar no que [conceito] realmente faz?'. É uma definição perguntada, não uma história.\n"
+        "- NUNCA narre experiência pessoal. Não use 'eu', 'comigo', 'quando eu vi isso'. "
+        "O texto fala COM o leitor (pode usar 'você'), mas nunca FALA SOBRE o autor.\n"
+        "- Apresente o nome completo/sigla do conceito em uma frase curta e direta, sem rodeio.\n"
+        "- Construa uma ANALOGIA do cotidiano (restaurante, trânsito, fila de banco, correio, etc) "
+        "e mapeie cada peça do conceito técnico pra uma peça da analogia, de forma explícita "
+        "(ex: 'O Garçom é o mensageiro que leva seu pedido'). A analogia carrega a explicação inteira.\n"
+        "- Depois da analogia, traduza de volta pro termo técnico real, mostrando o conceito acontecendo "
+        "na prática com um exemplo bem simples e comum (não avançado, não de sistema gigante).\n"
+        "- Pode citar uma consequência prática curiosa do conceito (um erro comum, um código de status, "
+        "um comportamento que o leitor já viu sem saber o porquê).\n"
+        "- Fecha reforçando a definição em uma frase simples, sem tom de aula nem moral da história.\n"
+        "- CTA: pergunta que convida o leitor a relacionar o conceito com algo que ele já viu ou usou, "
+        "sempre na 2ª pessoa ('você já...', 'você sabia...'), nunca contando o que o autor viveu."
     ),
 }
 
@@ -111,29 +145,59 @@ EXEMPLOS_VOZ = {
         "Você costuma usar records no seu dia a dia?\""
     ),
     "OPINIAO": (
-        "\"Antes de escrever uma linha de código, eu desenho.\n\n"
-        "Essa é a parte que a maioria pula — e é exatamente onde os problemas futuros nascem.\n\n"
+        "\"Desenhar a arquitetura antes de escrever a primeira linha de código não é burocracia. "
+        "É a etapa que a maioria pula — e é exatamente onde os problemas futuros nascem.\n\n"
         "Construir um sistema de IA em produção não é só escolher um LLM e sair integrando. "
-        "É uma decisão arquitetural com trade-offs reais que vão te acompanhar por meses.\n\n"
-        "O erro mais comum que vejo: arquitetura que funciona no demo mas não escala. "
+        "É uma decisão arquitetural com trade-offs reais que vão acompanhar o time por meses.\n\n"
+        "O erro mais comum: arquitetura que funciona no demo mas não escala. "
         "Tudo num arquivo só, sem separação de camadas, sem tratamento de falha.\n\n"
-        "Sistema de IA bem arquitetado é aquele que você consegue explicar num diagrama "
+        "Sistema de IA bem arquitetado é aquele que dá pra explicar num diagrama "
         "antes de abrir o editor.\n"
         "Como você estrutura seus sistemas hoje?\""
     ),
     "INFORMATIVO": (
-        "\"Algumas semanas atrás precisei ler 500k registros de uma tabela e processar cada um antes de passar pro próximo. "
-        "Carregar tudo na memória não era opção.\n\n"
-        "Foi aí que o IAsyncEnumerable<T> fez sentido de verdade.\n\n"
-        "Ele chegou no C# 8.0 pra resolver exatamente esse caso: você consome uma sequência assíncrona item a item, "
+        "\"Quando uma tabela tem 500 mil registros e cada um precisa ser processado antes de passar pro próximo, "
+        "carregar tudo na memória de uma vez deixa de ser opção.\n\n"
+        "É exatamente esse cenário que o IAsyncEnumerable<T> resolve.\n\n"
+        "Ele chegou no C# 8.0 pra permitir consumir uma sequência assíncrona item a item, "
         "sem esperar tudo carregar. O produtor gera cada item com yield return dentro de um método async, "
-        "o consumidor processa conforme chegam, e o runtime gerencia o fluxo entre os dois automaticamente.\n\n"
-        "Faz sentido quando você está fazendo streaming de dados do banco, lendo arquivos grandes linha a linha, "
-        "ou consumindo APIs paginadas. Não faz sentido quando a coleção inteira cabe na memória e você vai precisar "
-        "de Count() ou OrderBy() — aí coloca tudo numa lista e pronto.\n\n"
-        "O erro mais comum que vejo é usar IAsyncEnumerable por parecer mais moderno, sem precisar de streaming de verdade. "
-        "Você adiciona complexidade sem ganhar nada.\n\n"
+        "o consumidor processa conforme os itens chegam, e o runtime gerencia o fluxo entre os dois automaticamente.\n\n"
+        "Faz sentido em streaming de dados do banco, leitura de arquivos grandes linha a linha, "
+        "ou consumo de APIs paginadas. Não faz sentido quando a coleção inteira cabe na memória e em algum momento "
+        "vai ser necessário usar Count() ou OrderBy() — nesses casos, uma lista resolve melhor.\n\n"
+        "O erro mais comum é usar IAsyncEnumerable só por parecer mais moderno, sem existir streaming de verdade "
+        "por trás. Isso adiciona complexidade sem trazer ganho nenhum.\n\n"
         "Como você lida com volumes grandes de dados que não podem ir todos pra memória de uma vez?\""
+    ),
+    "COMPARATIVO": (
+        "\"REST ou GraphQL: a escolha errada aqui não trava o projeto no dia 1 — trava no mês 6.\n\n"
+        "O critério que a maioria usa é 'GraphQL é mais moderno, então é melhor'. "
+        "Na prática, isso ignora o problema que cada um foi feito pra resolver.\n\n"
+        "REST brilha quando os recursos são previsíveis: endpoints fixos, cache de CDN funcionando de graça, "
+        "qualquer dev novo entendendo a API em 10 minutos só lendo as rotas.\n\n"
+        "GraphQL ganha quando o cliente precisa de combinações variáveis de dados — um app mobile "
+        "que busca perfil, posts e notificações numa tela só, sem fazer 5 requisições ou trazer campos que não vai usar.\n\n"
+        "Pra um CRUD simples com poucos clientes consumindo, GraphQL costuma adicionar mais complexidade "
+        "de infraestrutura (resolvers, N+1 query problem, cache mais difícil) do que resolve.\n\n"
+        "A armadilha mais comum: escolher GraphQL pelo hype e descobrir só depois de pago o custo de manter "
+        "um schema enorme pra um caso de uso que um REST simples resolveria em uma tarde.\n\n"
+        "Você usa qual dos dois no seu stack atual — e o que te fez escolher?\""
+    ),"EXPLICATIVO": (
+        "\"O que é o 'HTTP' que aparece em todo site que você acessa?\n\n"
+        "Sempre que você digita um endereço no navegador, essas quatro letras estão lá trabalhando "
+        "nos bastidores. Mas o que elas realmente fazem?\n\n"
+        "HTTP significa Hypertext Transfer Protocol. Para entender como ele funciona na prática, "
+        "imagine que a internet é um grande restaurante.\n\n"
+        "Você (o navegador) é o cliente sentado à mesa querendo ver o cardápio. "
+        "O garçom é o HTTP — o mensageiro que leva seu pedido e traz sua comida. "
+        "A cozinha é o servidor, onde o site que você quer acessar está guardado.\n\n"
+        "Quando você clica em um link, você faz um pedido (request). O garçom corre até a cozinha, "
+        "pega os arquivos da página, e traz de volta pra sua tela — essa é a resposta (response).\n\n"
+        "É por isso que existem os famosos códigos de erro: se você pede uma página que não existe mais, "
+        "o garçom volta de mãos vazias com o clássico Erro 404.\n\n"
+        "No fim, HTTP é só o conjunto de regras que garante que esse pedido e essa entrega aconteçam "
+        "sempre da mesma forma, entre qualquer navegador e qualquer servidor do mundo.\n\n"
+        "Você já tinha parado pra pensar no que acontece entre digitar o endereço e a página aparecer?\""
     ),
 }
 

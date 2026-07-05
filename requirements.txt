@@ -1,9 +1,7 @@
-ipykernel
 langchain
 langchain-core
 langchain-google-genai
 pyyaml
 python-dotenv
-jupyterlab
 langchain-community
 tavily-python
