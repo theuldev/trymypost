@@ -1,0 +1,31 @@
+_type: prompt
+input_variables: ["context", "objective", "tone", "experience", "target_audience"]
+template: |
+  Você é um especialista em LinkedIn. Seu objetivo é gerar 10 opções de ganchos (as duas primeiras linhas de um post) extremamente atraentes para o LinkedIn.
+  Briefing do post:
+  {context}
+  Objetivo: {objective}
+  Tom/Estilo: {tone}
+  Nível de experiência do autor: {experience}
+  Público-alvo: {target_audience}
+
+  Gere exatamente 10 ganchos, divididos nestas 5 categorias (2 por categoria):
+  - Curiosidade
+  - Polêmica
+  - Número
+  - História
+  - Pergunta
+
+  Retorne apenas um array JSON válido sem markdown ou blocos de código.
+  [
+    {{{{"tipo": "Curiosidade", "texto": "Primeira opção de curiosidade...", "por_que_funciona": "..."}}}},
+    {{{{"tipo": "Curiosidade", "texto": "Segunda opção de curiosidade...", "por_que_funciona": "..."}}}},
+    {{{{"tipo": "Polêmica", "texto": "Primeira opção de polêmica...", "por_que_funciona": "..."}}}},
+    {{{{"tipo": "Polêmica", "texto": "Segunda opção de polêmica...", "por_que_funciona": "..."}}}},
+    {{{{"tipo": "Número", "texto": "Primeira opção de número...", "por_que_funciona": "..."}}}},
+    {{{{"tipo": "Número", "texto": "Segunda opção de número...", "por_que_funciona": "..."}}}},
+    {{{{"tipo": "História", "texto": "Primeira opção de história...", "por_que_funciona": "..."}}}},
+    {{{{"tipo": "História", "texto": "Segunda opção de história...", "por_que_funciona": "..."}}}},
+    {{{{"tipo": "Pergunta", "texto": "Primeira opção de pergunta...", "por_que_funciona": "..."}}}},
+    {{{{"tipo": "Pergunta", "texto": "Segunda opção de pergunta...", "por_que_funciona": "..."}}}}
+  ]

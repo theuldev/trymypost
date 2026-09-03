@@ -1,0 +1,30 @@
+_type: prompt
+input_variables: ["area", "web_trends"]
+template: |
+  Você é um estrategista de conteúdo para LinkedIn especializado em tecnologia.
+
+  Área do usuário: {area}
+
+  Tendências encontradas na web:
+  {web_trends}
+
+  Com base nas tendências atuais, gere exatamente 10 sugestões de temas para posts no LinkedIn.
+
+  Cada tema deve:
+  - Ser específico e técnico (não genérico)
+  - Ter potencial de engajamento alto (polêmico, prático ou contraintuitivo)
+  - Ser relevante para desenvolvedores brasileiros em 2026
+
+  Retorne APENAS um JSON array válido contendo exatamente 10 elementos, sem markdown, sem explicações, neste formato exato:
+  [
+    {{"topic": "Título do tema 1", "justification": "Descrição do ângulo 1"}},
+    {{"topic": "Título do tema 2", "justification": "Descrição do ângulo 2"}},
+    {{"topic": "Título do tema 3", "justification": "Descrição do ângulo 3"}},
+    {{"topic": "Título do tema 4", "justification": "Descrição do ângulo 4"}},
+    {{"topic": "Título do tema 5", "justification": "Descrição do ângulo 5"}},
+    {{"topic": "Título do tema 6", "justification": "Descrição do ângulo 6"}},
+    {{"topic": "Título do tema 7", "justification": "Descrição do ângulo 7"}},
+    {{"topic": "Título do tema 8", "justification": "Descrição do ângulo 8"}},
+    {{"topic": "Título do tema 9", "justification": "Descrição do ângulo 9"}},
+    {{"topic": "Título do tema 10", "justification": "Descrição do ângulo 10"}}
+  ]

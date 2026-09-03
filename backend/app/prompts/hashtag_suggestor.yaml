@@ -1,0 +1,17 @@
+_type: prompt
+input_variables: ["post_content", "brand"]
+template: |
+  Analise o seguinte post técnico para LinkedIn:
+  "{post_content}"
+
+  Sugira hashtags divididas em 3 categorias:
+  1. Populares (hashtags gerais com grande alcance, ex: #SoftwareEngineering, #Backend)
+  2. Nicho (hashtags específicas da tecnologia abordada, ex: #Docker, #Python, #AsyncAwait)
+  3. Marca (hashtags relacionadas a marca "{brand}" se fornecida, ou hashtags de marca de tecnologia genéricas como #TryMyPost, #DevLife)
+
+  Retorne apenas um objeto JSON válido sem markdown ou blocos de código com o formato exato:
+  {{
+    "populares": ["#tag1", "#tag2", "#tag3"],
+    "nicho": ["#tag4", "#tag5", "#tag6"],
+    "marca": ["#tag7", "#tag8", "#tag9"]
+  }}

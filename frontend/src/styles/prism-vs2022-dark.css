@@ -1,0 +1,187 @@
+/* Prism VS2022 Dark Theme - Custom theme matching Visual Studio 2022 Dark */
+/* Based on VS2022 Dark color palette */
+
+code[class*="language-"],
+pre[class*="language-"] {
+  color: #d4d4d4;
+  background: none;
+  text-shadow: 0 1px rgba(0, 0, 0, 0.3);
+  font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
+  font-size: 1em;
+  text-align: left;
+  white-space: pre;
+  word-spacing: normal;
+  word-break: normal;
+  word-wrap: normal;
+  line-height: 1.6;
+  tab-size: 4;
+  hyphens: none;
+}
+
+pre[class*="language-"] {
+  padding: 1em;
+  margin: 0;
+  overflow: auto;
+  border-radius: 0;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+  background: #1e1e1e;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: #6a9955;
+  font-style: italic;
+}
+
+.token.punctuation {
+  color: #d4d4d4;
+}
+
+.token.namespace {
+  opacity: 0.7;
+}
+
+/* Keywords - Blue #569cd6 */
+.token.keyword,
+.token.type-expression,
+.token.return-type,
+.token.constructor-invocation,
+.token.generic-method {
+  color: #569cd6;
+}
+
+/* Types/Classes - Teal #4ec9b0 */
+.token.class-name,
+.token.type-list,
+.token.decorator,
+.token.builtin {
+  color: #4ec9b0;
+}
+
+/* Strings - Orange/Brown #ce9178 */
+.token.string,
+.token.char,
+.token.attr-value,
+.token.builtin.inserted {
+  color: #ce9178;
+}
+
+/* Numbers - Light Green #b5cea8 */
+.token.number {
+  color: #b5cea8;
+}
+
+/* Operators - White #d4d4d4 */
+.token.operator,
+.token.entity,
+.token.url,
+.token.variable {
+  color: #d4d4d4;
+}
+
+/* Functions - Yellow #dcdcaa */
+.token.function,
+.token.attr-name,
+.token.selector {
+  color: #dcdcaa;
+}
+
+/* Regex/Important - Red #d16969 */
+.token.regex,
+.token.important {
+  color: #d16969;
+}
+
+/* Properties/Constants/Deleted - Red #f44747 */
+.token.property,
+.token.tag,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: #f44747;
+}
+
+/* Boolean - Light Green #b5cea8 */
+.token.boolean {
+  color: #b5cea8;
+}
+
+/* At-rules - Yellow #dcdcaa */
+.token.atrule {
+  color: #dcdcaa;
+}
+
+/* C# Specific tokens */
+.token.preprocessor,
+.token.directive {
+  color: #569cd6; /* Blue like keywords */
+}
+
+.token.namespace {
+  color: #d4d4d4; /* White */
+}
+
+.token.attribute {
+  color: #dcdcaa; /* Yellow */
+}
+
+.token.attribute .token.class-name,
+.token.attribute .token.function {
+  color: #dcdcaa; /* Yellow */
+}
+
+/* TypeScript/JavaScript Specific */
+.token.builtin {
+  color: #4ec9b0; /* Teal for Array, Promise, string, number, etc. */
+}
+
+.token.decorator {
+  color: #dcdcaa; /* Yellow for @Decorator */
+}
+
+/* Bold/Italic */
+.token.important,
+.token.bold {
+  font-weight: bold;
+}
+
+.token.italic {
+  font-style: italic;
+}
+
+.token.entity {
+  cursor: help;
+}
+
+/* Line numbers */
+.line-numbers .line-numbers-rows {
+  border-right: 1px solid #3c3c3c;
+}
+
+.line-numbers-rows > span:before {
+  color: #858585;
+}
+
+/* Line highlight */
+.line-highlight {
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 0;
+}
+
+/* Selection */
+::selection {
+  background: #264f78;
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+  background: #2d2d2d;
+  color: #ce9178;
+}

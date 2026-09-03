@@ -1,0 +1,14 @@
+_type: prompt
+input_variables: ["topic", "post_content"]
+template: |
+  Com base no tema "{topic}" e no conteúdo do post "{post_content}", sugira ideias visuais para acompanhar o post no LinkedIn.
+
+  Retorne apenas um objeto JSON válido sem markdown ou blocos de código com o seguinte formato:
+  {{
+    "tipo_conteudo": "Tipo de conteúdo visual (ex: Carrossel, Imagem Única, Infográfico, Vídeo Curto)",
+    "descricao_visual": "Descrição detalhada da identidade visual sugerida",
+    "ferramentas_sugeridas": ["ferramenta1", "ferramenta2", "ferramenta3"],
+    "dicas_composicao": ["dica1", "dica2", "dica3", "dica4"],
+    "codigo_exemplo": "Se o post contiver algum bloco de código markdown (iniciado por ```), extraia e retorne esse código exato aqui. Caso contrário, retorne null. Não inclua comentários no código.",
+    "codigo_linguagem": "A linguagem correspondente do código extraído (ex: javascript, typescript, csharp, python, sql, html, css, java, go, rust, json) ou null"
+  }}

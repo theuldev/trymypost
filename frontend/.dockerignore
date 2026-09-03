@@ -1,0 +1,22 @@
+# Frontend .dockerignore
+node_modules/
+dist/
+build/
+*.log
+.env
+.env.local
+.env.*.local
+*.tsbuildinfo
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+coverage/
+.nyc_output/
+.eslintcache
+.prettierrc
+.stylelintrc
+.turbo/
