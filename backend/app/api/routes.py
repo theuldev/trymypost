@@ -244,7 +244,7 @@ async def suggest_topics(request: SuggestTopicsRequest, db: AsyncSession = Depen
         "web_trends": "",
     })
     
-    return SuggestTopicsResponse(topics=result.get("topics", []))
+    return SuggestTopicsResponse(topics=result if isinstance(result, list) else [])
 
 
 @router.post("/code/from-post", response_model=CodeFromPostResponse)

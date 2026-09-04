@@ -636,101 +636,67 @@ export function Playground(): JSX.Element {
     );
 
   const renderEditorPanel = () => (
-    <div className="flex-1 flex flex-col h-full overflow-hidden">
+    <div className="flex h-full min-w-0 overflow-hidden">
       <form
         onSubmit={handleSubmit}
-        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden"
+        className="w-full max-w-3xl mx-auto my-auto px-4 py-6 overflow-y-auto overflow-x-hidden"
       >
-        <div className="max-w-3xl mx-auto w-full px-4 py-6 space-y-6">
-          {/* Header */}
-          <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50 tracking-tight">
-              Novo Post
-            </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
-              Configure os parâmetros e gere variações de conteúdo com IA
-            </p>
-          </div>
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-50 tracking-tight">
+            Novo Post
+          </h1>
+          <p className="text-base text-slate-500 dark:text-slate-400 mt-2">
+            Configure os parâmetros e gere variações de conteúdo com IA
+          </p>
+        </div>
 
-          {/* Form fields - two columns */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {renderFormFields()}
-          </div>
+        {/* Form fields - single column */}
+        <div className="space-y-6">
+          {renderFormFields()}
+        </div>
 
-          {/* Actions at bottom */}
-          <div className="pt-6 border-t border-slate-200 dark:border-slate-700 space-y-3 lg:flex lg:items-center lg:justify-between lg:gap-4">
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={handleSaveAsDraft}
-              >
-                Salvar Rascunho
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={loadDraft}
-              >
-                Carregar Rascunho
-              </Button>
-            </div>
+        {/* Actions at bottom */}
+        <div className="pt-8 border-t border-slate-200 dark:border-slate-700 space-y-3 flex flex-col items-center gap-4">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto justify-center">
             <Button
-              type="submit"
-              size="lg"
-              loading={isGenerating || isSubmitting}
-              leftIcon={<Send className="h-5 w-5" />}
-              disabled={!isFormValid || isSubmitting}
-              className="w-full lg:w-auto lg:ml-auto"
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={handleSaveAsDraft}
             >
-              {isGenerating || isSubmitting ? "Gerando posts..." : "Gerar Posts"}
-           </Button>
+              Salvar Rascunho
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={loadDraft}
+            >
+              Carregar Rascunho
+            </Button>
           </div>
+          <Button
+            type="submit"
+            size="lg"
+            loading={isGenerating || isSubmitting}
+            leftIcon={<Send className="h-5 w-5" />}
+            disabled={!isFormValid || isSubmitting}
+            className="w-full sm:w-auto min-w-[200px]"
+          >
+            {isGenerating || isSubmitting ? "Gerando posts..." : "Gerar Posts"}
+         </Button>
         </div>
       </form>
     </div>
   );
 
   const renderResultsPanel = () => {
-    const emptyState = (
-      <div className="flex-1 flex flex-col items-center justify-center text-center py-16 px-6">
-        <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-blue-600 flex items-center justify-center">
-          <Wand2 className="h-8 w-8 text-white" />
-        </div>
-        <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-50 mb-2">
-          Nenhum post gerado ainda
-        </h3>
-        <p className="text-slate-500 dark:text-slate-400 max-w-sm mb-6 leading-relaxed">
-          Preencha o formulário ao lado, escolha o estilo e clique em{" "}
-          <strong className="text-blue-600 dark:text-blue-400">
-            "Gerar Posts"
-          </strong>{" "}
-          para criar suas variações personalizadas.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm">
-          <Button
-            variant="secondary"
-            fullWidth
-            onClick={() => codeEditorRef.current?.focus()}
-            leftIcon={<Code2 className="h-4 w-4" />}
-          >
-            Testar com Código
-          </Button>
-          <Button
-            variant="ghost"
-            fullWidth
-            onClick={() => setActiveTab("editor")}
-            leftIcon={<Sparkles className="h-4 w-4" />}
-          >
-            Gerar a partir de Texto
-          </Button>
-        </div>
-      </div>
-    );
+    if (!showResults || generatedPosts.length === 0) {
+      return null;
+    }
 
-    const resultsContent = (
+    return (
       <>
         {/* Tab Navigation */}
         <div
@@ -917,14 +883,16 @@ export function Playground(): JSX.Element {
         </div>
       </>
     );
-
-    return showResults ? resultsContent : emptyState;
   };
 
   return (
-    <div className="flex h-full min-w-0 overflow-hidden relative overflow-x-hidden">
+    <div className="min-h-screen relative overflow-x-hidden">
       {renderEditorPanel()}
-      {renderResultsPanel()}
+      {showResults && generatedPosts.length > 0 && (
+        <div className="max-w-3xl mx-auto px-4 pb-12">
+          {renderResultsPanel()}
+        </div>
+      )}
 
       {/* Loading Overlay */}
       {isGenerating && (
