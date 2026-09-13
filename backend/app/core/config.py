@@ -16,6 +16,11 @@ class Settings(BaseSettings):
 
     database_url: str = Field(default="sqlite+aiosqlite:///./trymypost.db", env="DATABASE_URL")
 
+    rabbitmq_url: str = Field(
+        default="amqp://guest:guest@localhost/",
+        env="RABBITMQ_URL",
+    )
+
     google_api_key: str = Field(..., env="GOOGLE_API_KEY")
     tavily_api_key: str = Field(default="", env="TAVILY_API_KEY")  # opcional para não quebrar se faltar
 

@@ -1,15 +1,15 @@
 _type: prompt
 input_variables: ["post_content", "brand"]
 template: |
-  Analise o seguinte post técnico para LinkedIn:
+  Analyze the following technical LinkedIn post:
   "{post_content}"
 
-  Sugira hashtags divididas em 3 categorias:
-  1. Populares (hashtags gerais com grande alcance, ex: #SoftwareEngineering, #Backend)
-  2. Nicho (hashtags específicas da tecnologia abordada, ex: #Docker, #Python, #AsyncAwait)
-  3. Marca (hashtags relacionadas a marca "{brand}" se fornecida, ou hashtags de marca de tecnologia genéricas como #TryMyPost, #DevLife)
+  Suggest hashtags split into 3 categories:
+  1. Popular (general high-reach hashtags, e.g.: #SoftwareEngineering, #Backend)
+  2. Niche (hashtags specific to the technology addressed, e.g.: #Docker, #Python, #AsyncAwait)
+  3. Brand (hashtags related to the brand "{brand}" if provided, or generic tech brand hashtags like #TryMyPost, #DevLife)
 
-  Retorne apenas um objeto JSON válido sem markdown ou blocos de código com o formato exato:
+  Return only a valid JSON object without markdown or code blocks in the exact format:
   {{
     "populares": ["#tag1", "#tag2", "#tag3"],
     "nicho": ["#tag4", "#tag5", "#tag6"],

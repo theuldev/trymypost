@@ -1,31 +1,33 @@
 _type: prompt
-input_variables: ["context", "objective", "tone", "experience", "target_audience"]
+input_variables: ["context", "objective", "tone", "experience", "target_audience", "language"]
 template: |
-  Você é um especialista em LinkedIn. Seu objetivo é gerar 10 opções de ganchos (as duas primeiras linhas de um post) extremamente atraentes para o LinkedIn.
-  Briefing do post:
+  You are a LinkedIn expert. Your goal is to generate 10 extremely compelling hook options (the first two lines of a post) for LinkedIn.
+  Post briefing:
   {context}
-  Objetivo: {objective}
-  Tom/Estilo: {tone}
-  Nível de experiência do autor: {experience}
-  Público-alvo: {target_audience}
+  Objective: {objective}
+  Tone/Style: {tone}
+  Author's experience level: {experience}
+  Target audience: {target_audience}
 
-  Gere exatamente 10 ganchos, divididos nestas 5 categorias (2 por categoria):
-  - Curiosidade
-  - Polêmica
-  - Número
-  - História
-  - Pergunta
+  IMPORTANT: Write the value of "texto" and "por_que_funciona" in {language}. The keys "tipo", "texto" and "por_que_funciona" must stay exactly as shown.
 
-  Retorne apenas um array JSON válido sem markdown ou blocos de código.
+  Generate exactly 10 hooks, split into these 5 categories (2 per category):
+  - Curiosity
+  - Controversy
+  - Number
+  - Story
+  - Question
+
+  Return only a valid JSON array without markdown or code blocks.
   [
-    {{{{"tipo": "Curiosidade", "texto": "Primeira opção de curiosidade...", "por_que_funciona": "..."}}}},
-    {{{{"tipo": "Curiosidade", "texto": "Segunda opção de curiosidade...", "por_que_funciona": "..."}}}},
-    {{{{"tipo": "Polêmica", "texto": "Primeira opção de polêmica...", "por_que_funciona": "..."}}}},
-    {{{{"tipo": "Polêmica", "texto": "Segunda opção de polêmica...", "por_que_funciona": "..."}}}},
-    {{{{"tipo": "Número", "texto": "Primeira opção de número...", "por_que_funciona": "..."}}}},
-    {{{{"tipo": "Número", "texto": "Segunda opção de número...", "por_que_funciona": "..."}}}},
-    {{{{"tipo": "História", "texto": "Primeira opção de história...", "por_que_funciona": "..."}}}},
-    {{{{"tipo": "História", "texto": "Segunda opção de história...", "por_que_funciona": "..."}}}},
-    {{{{"tipo": "Pergunta", "texto": "Primeira opção de pergunta...", "por_que_funciona": "..."}}}},
-    {{{{"tipo": "Pergunta", "texto": "Segunda opção de pergunta...", "por_que_funciona": "..."}}}}
+    {{{{"tipo": "Curiosity", "texto": "First curiosity option...", "por_que_funciona": "..."}}}},
+    {{{{"tipo": "Curiosity", "texto": "Second curiosity option...", "por_que_funciona": "..."}}}},
+    {{{{"tipo": "Controversy", "texto": "First controversy option...", "por_que_funciona": "..."}}}},
+    {{{{"tipo": "Controversy", "texto": "Second controversy option...", "por_que_funciona": "..."}}}},
+    {{{{"tipo": "Number", "texto": "First number option...", "por_que_funciona": "..."}}}},
+    {{{{"tipo": "Number", "texto": "Second number option...", "por_que_funciona": "..."}}}},
+    {{{{"tipo": "Story", "texto": "First story option...", "por_que_funciona": "..."}}}},
+    {{{{"tipo": "Story", "texto": "Second story option...", "por_que_funciona": "..."}}}},
+    {{{{"tipo": "Question", "texto": "First question option...", "por_que_funciona": "..."}}}},
+    {{{{"tipo": "Question", "texto": "Second question option...", "por_que_funciona": "..."}}}}
   ]

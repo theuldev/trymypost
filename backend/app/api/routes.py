@@ -3,9 +3,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_
 from typing import List, Optional
 from datetime import datetime
+import json
+import re
+import uuid
 
 from app.db.session import get_db
 from app.models.post import PostHistory, PostStatus, GenerationTask
+from app.models.code_example import CodeExample
+from app.models.code_preset import CodeImagePreset
 from app.schemas.post import (
     GeneratePostRequest, GeneratePostResponse, TaskStatusResponse,
     PostHistoryListResponse, PostHistoryDetail, PostHistoryBase,
@@ -13,12 +18,13 @@ from app.schemas.post import (
     CodeFromPostResponse, SuggestTopicsRequest, SuggestTopicsResponse,
     HealthResponse,
 )
-from app.services.pipeline import start_generation_task
-from app.services.code_gen import CodeGenerator
-from app.services.prompts import get_prompt
+from app.schemas.code_example import CodeExampleResponse
+from app.schemas.code_preset import CodePresetCreate, CodePresetResponse
+from app.services.pipeline_service import start_generation_task
+from app.ai.generators.code_generator import CodeGenerator
+from app.services.prompts_service import get_prompt
 
 router = APIRouter()
-code_generator = CodeGenerator()
 
 
 @router.get("/health", response_model=HealthResponse)
@@ -32,7 +38,7 @@ async def generate_post(
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ):
-    task_id = await start_generation_task(db, request.model_dump())
+    task_id = await start_generation_task(db, request.model_dump(mode="json"))
     return GeneratePostResponse(task_id=task_id, status="pending")
 
 
@@ -75,11 +81,14 @@ async def list_history(
     query = select(PostHistory).order_by(PostHistory.created_at.desc())
     
     if search:
-        query = query.where(PostHistory.tema.ilike(f"%{search}%"))
+        query = query.where(PostHistory.topic.ilike(f"%{search}%"))
     if status:
-        query = query.where(PostHistory.status == status)
+        try:
+            query = query.where(PostHistory.status == PostStatus(status))
+        except ValueError:
+            pass
     if favorito is not None:
-        query = query.where(PostHistory.favorito == favorito)
+        query = query.where(PostHistory.is_favorite == favorito)
     
     total_query = select(func.count()).select_from(query.subquery())
     total = await db.scalar(total_query)
@@ -97,88 +106,48 @@ async def list_history(
 
 
 @router.get("/history/{history_id}", response_model=PostHistoryDetail)
-async def get_history_detail(history_id: int, db: AsyncSession = Depends(get_db)):
+async def get_history_detail(history_id: str, db: AsyncSession = Depends(get_db)):
     history = await db.get(PostHistory, history_id)
     if not history:
         raise HTTPException(status_code=404, detail="History not found")
-    
+
+    code_examples_result = await db.execute(
+        select(CodeExample).where(CodeExample.post_id == history_id).order_by(CodeExample.created_at.asc())
+    )
+    code_examples = list(code_examples_result.scalars().all())
+
     # Convert ORM to dict and parse review string if needed
     data = {
         "id": history.id,
-        "tema": history.tema,
-        "estilo": history.estilo,
-        "publico": history.publico,
-        "experiencia": history.experiencia,
-        "objetivo": history.objetivo,
-        "formato": history.formato,
-        "incluir_codigo": history.incluir_codigo,
-        "incluir_visual": history.incluir_visual,
+        "topic": history.topic,
+        "style": history.style,
+        "audience": history.audience,
+        "experience": history.experience,
+        "objective": history.objective,
+        "format": history.format,
+        "include_code": history.include_code,
+        "include_visual": history.include_visual,
         "status": history.status.value if hasattr(history.status, 'value') else history.status,
-        "favorito": history.favorito,
+        "is_favorite": history.is_favorite,
         "tags": history.tags or [],
         "created_at": history.created_at,
         "updated_at": history.updated_at,
         "completed_at": history.completed_at,
         "error_message": history.error_message,
-        "posts_data": history.posts_data,
-        "topicos_pesquisados": history.topicos_pesquisados,
+        "posts_data": history.content,
+        "researched_topics": history.researched_topics,
         "hashtags": history.hashtags,
         "hooks": history.hooks,
         "review": history.review,
-        "visual_sugestao": history.visual_sugestao,
+        "visual_suggestion": history.visual_suggestion,
+        "code_examples": [CodeExampleResponse.model_validate(ce) for ce in code_examples],
     }
-    
-    # Parse review string to dict if needed
-    if isinstance(data.get("review"), str):
-        import re
-        v = data["review"]
-        result = {
-            "score": 0,
-            "pontos_fortes": [],
-            "pontos_melhoria": [],
-            "sugestoes": []
-        }
-        # Extract SCORE FINAL
-        score_match = re.search(r'SCORE FINAL:\s*([\d.]+)/10', v)
-        if score_match:
-            result["score"] = float(score_match.group(1))
-        
-        # Extract PROBLEMAS -> pontos_melhoria
-        problemas_match = re.search(r'PROBLEMAS:?\s*\n(.*?)(?:\n\s*(?:RESULTADO|POST REESCRITO|POST APROVADO)|$)', v, re.IGNORECASE | re.DOTALL)
-        if problemas_match:
-            points = problemas_match.group(1).strip()
-            for line in points.split('\n'):
-                line = line.strip()
-                # Remove markdown formatting and bullet points
-                line = re.sub(r'^\s*[\*\-\•]\s*', '', line)
-                line = re.sub(r'\*\*(.*?)\*\*', r'\1', line)  # Remove **bold**
-                if line:
-                    result["pontos_melhoria"].append(line.strip())
-        
-        # Extract RESULTADO for pontos_fortes and sugestoes
-        resultado_match = re.search(r'RESULTADO:?\s*\n(.*?)(?:\n\s*(?:POST REESCRITO|POST APROVADO)|$)', v, re.IGNORECASE | re.DOTALL)
-        if resultado_match:
-            result_text = resultado_match.group(1).strip()
-            # Split by sentences or bullet points
-            for line in result_text.split('\n'):
-                line = line.strip()
-                # Remove markdown formatting
-                line = re.sub(r'\*\*(.*?)\*\*', r'\1', line)
-                line = re.sub(r'^\s*[\*\-\•]\s*', '', line)
-                if line:
-                    # Check if it's a suggestion (contains suggestion keywords)
-                    if any(kw in line.lower() for kw in ['suger', 'ajust', 'melhor', 'recomend', 'poderia', 'deveria']):
-                        result["sugestoes"].append(line.strip())
-                    else:
-                        result["pontos_fortes"].append(line.strip())
-        
-        data["review"] = result
-    
+
     return PostHistoryDetail.model_validate(data)
 
 
 @router.delete("/history/{history_id}")
-async def delete_history(history_id: int, db: AsyncSession = Depends(get_db)):
+async def delete_history(history_id: str, db: AsyncSession = Depends(get_db)):
     history = await db.get(PostHistory, history_id)
     if not history:
         raise HTTPException(status_code=404, detail="History not found")
@@ -189,14 +158,14 @@ async def delete_history(history_id: int, db: AsyncSession = Depends(get_db)):
 
 @router.patch("/history/{history_id}/favorite", response_model=PostHistoryBase)
 async def toggle_favorite(
-    history_id: int,
+    history_id: str,
     request: ToggleFavoriteRequest,
     db: AsyncSession = Depends(get_db),
 ):
     history = await db.get(PostHistory, history_id)
     if not history:
         raise HTTPException(status_code=404, detail="History not found")
-    history.favorito = request.favorito
+    history.is_favorite = request.is_favorite
     await db.commit()
     await db.refresh(history)
     return PostHistoryBase.model_validate(history)
@@ -204,7 +173,7 @@ async def toggle_favorite(
 
 @router.patch("/history/{history_id}/tags", response_model=PostHistoryBase)
 async def update_tags(
-    history_id: int,
+    history_id: str,
     request: UpdateTagsRequest,
     db: AsyncSession = Depends(get_db),
 ):
@@ -217,37 +186,93 @@ async def update_tags(
     return PostHistoryBase.model_validate(history)
 
 
+def _parse_json_array(raw) -> List[dict]:
+    if raw is None:
+        return []
+    if isinstance(raw, list):
+        return raw
+    s = raw if isinstance(raw, str) else str(raw)
+    fence = re.search(r'```(?:json)?\s*([\s\S]*?)```', s)
+    if fence:
+        s = fence.group(1)
+    s = s.strip()
+    try:
+        parsed = json.loads(s)
+        return parsed if isinstance(parsed, list) else []
+    except Exception:
+        pass
+    m = re.search(r'\[[\s\S]*\]', s)
+    if m:
+        try:
+            parsed = json.loads(m.group(0))
+            return parsed if isinstance(parsed, list) else []
+        except Exception:
+            pass
+    return []
+
+
 @router.post("/topics/suggest", response_model=SuggestTopicsResponse)
 async def suggest_topics(request: SuggestTopicsRequest, db: AsyncSession = Depends(get_db)):
-    from app.services.pipeline import AIPipeline
-    
-    pipeline = AIPipeline(db)
+    from app.services.llm_service import LLMService
+    from langchain_core.prompts import PromptTemplate
+    from langchain_core.output_parsers import StrOutputParser
+
+    llm = await LLMService.get_llm(db)
     prompt_data = get_prompt("topic_suggest")
     template = prompt_data.get("template", "")
-    
-    from langchain_core.prompts import PromptTemplate
-    from langchain_core.output_parsers import JsonOutputParser
-    from langchain_google_genai import ChatGoogleGenerativeAI
-    from app.core.config import get_settings
-    
-    settings = get_settings()
-    llm = ChatGoogleGenerativeAI(
-        model=settings.gemini_model,
-        temperature=0.7,
-        google_api_key=settings.google_api_key,
-    )
-    prompt = PromptTemplate(template=template, input_variables=["area", "web_trends"])
-    chain = prompt | llm | JsonOutputParser()
-    
-    result = await chain.ainvoke({
-        "area": request.contexto or "desenvolvimento de software",
+
+    if not template:
+        return SuggestTopicsResponse(topics=[])
+
+    prompt = PromptTemplate(template=template, input_variables=["area", "country", "web_trends", "quantity"])
+    chain = prompt | llm | StrOutputParser()
+
+    raw = await chain.ainvoke({
+        "area": request.context or "software development",
+        "country": request.country or "Brazil",
         "web_trends": "",
+        "quantity": request.quantity,
     })
-    
-    return SuggestTopicsResponse(topics=result if isinstance(result, list) else [])
+
+    topics = _parse_json_array(raw)
+    return SuggestTopicsResponse(topics=topics)
 
 
 @router.post("/code/from-post", response_model=CodeFromPostResponse)
 async def generate_code_from_post(request: CodeFromPostRequest):
     result = await code_generator.generate(request.post)
     return CodeFromPostResponse(**result)
+
+
+@router.get("/code-presets", response_model=List[CodePresetResponse])
+async def list_code_presets(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(CodeImagePreset).order_by(CodeImagePreset.created_at.desc())
+    )
+    presets = result.scalars().all()
+    return [CodePresetResponse.model_validate(p) for p in presets]
+
+
+@router.post("/code-presets", response_model=CodePresetResponse)
+async def create_code_preset(
+    request: CodePresetCreate,
+    db: AsyncSession = Depends(get_db),
+):
+    preset = CodeImagePreset(
+        id=str(uuid.uuid4()),
+        **request.model_dump(),
+    )
+    db.add(preset)
+    await db.commit()
+    await db.refresh(preset)
+    return CodePresetResponse.model_validate(preset)
+
+
+@router.delete("/code-presets/{preset_id}")
+async def delete_code_preset(preset_id: str, db: AsyncSession = Depends(get_db)):
+    preset = await db.get(CodeImagePreset, preset_id)
+    if not preset:
+        raise HTTPException(status_code=404, detail="Preset not found")
+    await db.delete(preset)
+    await db.commit()
+    return {"message": "Deleted"}

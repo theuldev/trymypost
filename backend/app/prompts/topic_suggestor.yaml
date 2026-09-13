@@ -1,30 +1,24 @@
 _type: prompt
-input_variables: ["area", "web_trends"]
+input_variables: ["area", "country", "web_trends", "quantity"]
 template: |
-  Você é um estrategista de conteúdo para LinkedIn especializado em tecnologia.
+  You are a content strategist for LinkedIn specialized in technology.
 
-  Área do usuário: {area}
+  User's area: {area}
 
-  Tendências encontradas na web:
+  Target country: {country}
+
+  Trends found on the web:
   {web_trends}
 
-  Com base nas tendências atuais, gere exatamente 10 sugestões de temas para posts no LinkedIn.
+  Based on current trends, generate exactly {quantity} topic suggestions for LinkedIn posts.
 
-  Cada tema deve:
-  - Ser específico e técnico (não genérico)
-  - Ter potencial de engajamento alto (polêmico, prático ou contraintuitivo)
-  - Ser relevante para desenvolvedores brasileiros em 2026
+  Each topic should:
+  - Be specific and technical (not generic)
+  - Have high engagement potential (controversial, practical or counterintuitive)
+  - Be relevant to developers in {country} in 2026
 
-  Retorne APENAS um JSON array válido contendo exatamente 10 elementos, sem markdown, sem explicações, neste formato exato:
+  Return ONLY a valid JSON array containing exactly {quantity} elements, without markdown, without explanations, in this exact format:
   [
-    {{"topic": "Título do tema 1", "justification": "Descrição do ângulo 1"}},
-    {{"topic": "Título do tema 2", "justification": "Descrição do ângulo 2"}},
-    {{"topic": "Título do tema 3", "justification": "Descrição do ângulo 3"}},
-    {{"topic": "Título do tema 4", "justification": "Descrição do ângulo 4"}},
-    {{"topic": "Título do tema 5", "justification": "Descrição do ângulo 5"}},
-    {{"topic": "Título do tema 6", "justification": "Descrição do ângulo 6"}},
-    {{"topic": "Título do tema 7", "justification": "Descrição do ângulo 7"}},
-    {{"topic": "Título do tema 8", "justification": "Descrição do ângulo 8"}},
-    {{"topic": "Título do tema 9", "justification": "Descrição do ângulo 9"}},
-    {{"topic": "Título do tema 10", "justification": "Descrição do ângulo 10"}}
+    {{"topic": "Topic title 1", "justification": "Angle description 1"}},
+    {{"topic": "Topic title 2", "justification": "Angle description 2"}}
   ]

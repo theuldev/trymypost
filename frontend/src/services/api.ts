@@ -52,6 +52,11 @@ class ApiClient {
     return response.data
   }
 
+  async put<T>(url: string, data?: any) {
+    const response = await this.client.put<T>(url, data)
+    return response.data
+  }
+
   async delete<T>(url: string) {
     const response = await this.client.delete<T>(url)
     return response.data

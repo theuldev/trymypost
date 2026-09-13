@@ -1,98 +1,262 @@
-import { useState, useRef, useEffect, ReactNode } from 'react'
-import { ChevronsUpDown } from 'lucide-react'
-import { cn } from '@/utils/cn'
+import { useState, useRef, useEffect, ReactNode } from "react";
+import { createPortal } from "react-dom";
+import { Check, ChevronDown } from "lucide-react";
+import { cn } from "@/utils/cn";
 
 export interface SelectOption {
-  value: string
-  label: string
-  icon?: ReactNode      // avatar, bandeira ou ícone
-  meta?: string         // texto secundário, ex: "(+998)"
+  value: string;
+  label: string;
+  icon?: ReactNode;
+  meta?: string;
 }
 
 export interface SelectProps {
-  options: SelectOption[]
-  value: string
-  onChange: (value: string) => void
-  placeholder?: string
-  label?: string
-  error?: string
-  hint?: string
-  className?: string
+  options: SelectOption[];
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  label?: string;
+  error?: string;
+  hint?: string;
+  className?: string;
+  disabled?: boolean;
 }
 
-export function Select({ options, value, onChange, placeholder, label, error, hint, className }: SelectProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const wrapperRef = useRef<HTMLDivElement>(null)
-  const selected = options.find((o) => o.value === value)
+export function Select({
+  options,
+  value,
+  onChange,
+  placeholder,
+  label,
+  error,
+  hint,
+  className,
+  disabled,
+}: SelectProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  const selected = options.find((option) => option.value === value);
 
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) setIsOpen(false)
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (
+        wrapperRef.current &&
+        !wrapperRef.current.contains(target)
+      ) {
+        const portalEl = document.getElementById("select-portal-root");
+        if (portalEl && portalEl.contains(target)) return;
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setDropdownStyle({
+        position: "fixed",
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+        zIndex: 9999,
+      });
     }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+  }, [isOpen]);
+
+useEffect(() => {
+  if (!isOpen || !triggerRef.current) return;
+
+  const updatePosition = () => {
+    if (!triggerRef.current) return;
+
+    const rect = triggerRef.current.getBoundingClientRect();
+
+    setDropdownStyle({
+      position: "fixed",
+      top: rect.bottom + 4,
+      left: rect.left,
+      width: rect.width,
+      zIndex: 9999,
+    });
+  };
+
+  updatePosition();
+
+  window.addEventListener("scroll", updatePosition, true);
+  window.addEventListener("resize", updatePosition);
+
+  return () => {
+    window.removeEventListener("scroll", updatePosition, true);
+    window.removeEventListener("resize", updatePosition);
+  };
+}, [isOpen]);
+  const dropdown = isOpen ? (
+    <div
+      id="select-portal-root"
+      style={dropdownStyle}
+      className={cn(
+        "overflow-hidden",
+        "rounded-md",
+        "border border-surface-200",
+        "bg-white",
+        "shadow-md",
+        "dark:border-surface-700",
+        "dark:bg-surface-900",
+        "animate-in fade-in-0 zoom-in-95 duration-100"
+      )}
+      role="listbox"
+      aria-activedescendant={value}
+    >
+      <div
+        className={cn(
+          "max-h-44 overflow-y-auto py-1",
+          "[scrollbar-width:thin]",
+          "[scrollbar-color:theme(colors.surface.300)_transparent]",
+          "dark:[scrollbar-color:theme(colors.surface.600)_transparent]",
+          "[&::-webkit-scrollbar]:w-1.5",
+          "[&::-webkit-scrollbar-track]:bg-transparent",
+          "[&::-webkit-scrollbar-thumb]:rounded-full",
+          "[&::-webkit-scrollbar-thumb]:bg-surface-300",
+          "[&::-webkit-scrollbar-thumb:hover]:bg-surface-400",
+          "dark:[&::-webkit-scrollbar-thumb]:bg-surface-600",
+          "dark:[&::-webkit-scrollbar-thumb:hover]:bg-surface-500"
+        )}
+      >
+        {options.map((option) => {
+          const isSelected = option.value === value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="option"
+              aria-selected={isSelected}
+              onClick={() => {
+                onChange(option.value);
+                setIsOpen(false);
+              }}
+              className={cn(
+                "flex w-full items-center gap-2",
+                "min-h-8 px-3 py-1.5",
+                "text-left text-xs",
+                "transition-colors duration-100",
+                isSelected
+                  ? cn(
+                      "bg-primary-50",
+                      "text-primary-700",
+                      "dark:bg-primary-900/20",
+                      "dark:text-primary-300"
+                    )
+                  : cn(
+                      "text-surface-700",
+                      "hover:bg-surface-50",
+                      "dark:text-surface-300",
+                      "dark:hover:bg-surface-800"
+                    )
+              )}
+            >
+              {option.icon && (
+                <span className="flex shrink-0 items-center">{option.icon}</span>
+              )}
+              <span className="min-w-0 flex-1 truncate">{option.label}</span>
+              {option.meta && (
+                <span className="shrink-0 text-[10px] text-surface-400">
+                  {option.meta}
+                </span>
+              )}
+              {isSelected && (
+                <Check className="h-3.5 w-3.5 shrink-0 text-primary-600 dark:text-primary-400" />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  ) : null;
 
   return (
-    <div className={cn('w-full', className)} ref={wrapperRef}>
+    <div ref={wrapperRef} className={cn("relative w-full", className)}>
       {label && (
-        <label className="block text-xs font-bold text-slate-900 dark:text-slate-50 mb-1 uppercase tracking-wide">{label}</label>
+        <label className="mb-1 block text-xs font-medium text-surface-700 dark:text-surface-300">
+          {label}
+        </label>
       )}
+
       <div className="relative">
         <button
+          ref={triggerRef}
           type="button"
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={() => setIsOpen((open) => !open)}
+          disabled={disabled}
           className={cn(
-            'flex items-center gap-2.5 w-full px-3.5 py-2.5 text-sm text-left bg-white dark:bg-slate-900 border rounded-xl',
-            'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-150',
-            error ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'
+            "flex w-full items-center gap-2",
+            "min-h-8 px-3 py-1.5",
+            "rounded-md",
+            "border bg-white",
+            "text-left text-xs",
+            "transition-colors duration-150",
+            "focus:outline-none",
+            "focus-visible:ring-2",
+            "focus-visible:ring-primary-500/30",
+            "dark:bg-surface-900",
+            error
+              ? "border-red-500"
+              : "border-surface-200 dark:border-surface-700",
+            "hover:border-surface-300",
+            "dark:hover:border-surface-600",
+            disabled && "opacity-50 cursor-not-allowed"
           )}
           aria-haspopup="listbox"
           aria-expanded={isOpen}
         >
-          {selected?.icon}
-          <span className="flex-1 truncate text-slate-900 dark:text-slate-100">
-            {selected?.label || placeholder || 'Selecione...'}
-          </span>
-          {selected?.meta && <span className="text-slate-400 text-sm">{selected.meta}</span>}
-          <ChevronsUpDown className={cn('h-4 w-4 text-slate-400 transition-transform duration-200 flex-shrink-0', isOpen && 'rotate-180')} />
-        </button>
-
-        {isOpen && (
-          <div 
-            className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg overflow-hidden max-h-60 overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-150"
-            role="listbox"
-            aria-activedescendant={value}
+          {selected?.icon && (
+            <span className="flex shrink-0 items-center">{selected.icon}</span>
+          )}
+          <span
+            className={cn(
+              "min-w-0 flex-1 truncate",
+              selected
+                ? "text-surface-800 dark:text-surface-200"
+                : "text-surface-400 dark:text-surface-500"
+            )}
           >
-            {options.map((opt) => (
-              <li
-                key={opt.value}
-                id={opt.value}
-                role="option"
-                aria-selected={opt.value === value}
-                onClick={() => { onChange(opt.value); setIsOpen(false) }}
-                className={cn(
-                  'flex items-center gap-2.5 px-3.5 py-2 text-sm cursor-pointer transition-colors duration-100',
-                  opt.value === value 
-                    ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 font-medium' 
-                    : 'hover:bg-slate-50 dark:hover:bg-slate-800'
-                )}
-              >
-                {opt.icon}
-                <span className="flex-1 truncate">{opt.label}</span>
-                {opt.meta && <span className="text-slate-400 text-xs">{opt.meta}</span>}
-                {opt.value === value && (
-                  <svg className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                )}
-              </li>
-            ))}
-          </div>
-        )}
+            {selected?.label || placeholder || "Selecione..."}
+          </span>
+          {selected?.meta && (
+            <span className="shrink-0 text-[11px] text-surface-400">
+              {selected.meta}
+            </span>
+          )}
+          <ChevronDown
+            className={cn(
+              "h-3.5 w-3.5 shrink-0 text-surface-400",
+              "transition-transform duration-150",
+              isOpen && "rotate-180"
+            )}
+          />
+        </button>
       </div>
-      {hint && !error && <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">{hint}</p>}
-      {error && <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">{error}</p>}
+
+      {hint && !error && (
+        <p className="mt-1 text-[11px] leading-relaxed text-surface-400 dark:text-surface-500">
+          {hint}
+        </p>
+      )}
+      {error && (
+        <p className="mt-1 text-[11px] leading-relaxed text-red-600 dark:text-red-400">
+          {error}
+        </p>
+      )}
+
+      {typeof document !== "undefined" && createPortal(dropdown, document.body)}
     </div>
-  )
+  );
 }
+
+export default Select;

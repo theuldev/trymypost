@@ -1,14 +1,14 @@
 _type: prompt
 input_variables: ["topic", "post_content"]
 template: |
-  Com base no tema "{topic}" e no conteúdo do post "{post_content}", sugira ideias visuais para acompanhar o post no LinkedIn.
+  Based on the topic "{topic}" and the post content "{post_content}", suggest visual ideas to accompany the post on LinkedIn.
 
-  Retorne apenas um objeto JSON válido sem markdown ou blocos de código com o seguinte formato:
+  Return only a valid JSON object without markdown or code blocks in the following format:
   {{
-    "tipo_conteudo": "Tipo de conteúdo visual (ex: Carrossel, Imagem Única, Infográfico, Vídeo Curto)",
-    "descricao_visual": "Descrição detalhada da identidade visual sugerida",
-    "ferramentas_sugeridas": ["ferramenta1", "ferramenta2", "ferramenta3"],
-    "dicas_composicao": ["dica1", "dica2", "dica3", "dica4"],
-    "codigo_exemplo": "Se o post contiver algum bloco de código markdown (iniciado por ```), extraia e retorne esse código exato aqui. Caso contrário, retorne null. Não inclua comentários no código.",
-    "codigo_linguagem": "A linguagem correspondente do código extraído (ex: javascript, typescript, csharp, python, sql, html, css, java, go, rust, json) ou null"
+    "tipo_conteudo": "Type of visual content (e.g.: Carousel, Single Image, Infographic, Short Video)",
+    "descricao_visual": "Detailed description of the suggested visual identity",
+    "ferramentas_sugeridas": ["tool1", "tool2", "tool3"],
+    "dicas_composicao": ["tip1", "tip2", "tip3", "tip4"],
+    "codigo_exemplo": "If the post contains a markdown code block (starting with ```), extract and return that exact code here. Otherwise, return null. Do not include comments in the code.",
+    "codigo_linguagem": "The corresponding language of the extracted code (e.g.: javascript, typescript, csharp, python, sql, html, css, java, go, rust, json) or null"
   }}

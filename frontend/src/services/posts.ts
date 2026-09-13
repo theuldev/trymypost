@@ -13,6 +13,9 @@ import type {
   SuggestTopicsRequest,
   SuggestTopicsResponse,
   HealthResponse,
+  PostEdit,
+  CodePreset,
+  AppSettings,
 } from '../types'
 
 export const postsApi = {
@@ -30,20 +33,27 @@ export const postsApi = {
     page_size?: number
     search?: string
     status?: string
-    favorito?: boolean
+    is_favorite?: boolean
   }) => api.get<PostHistoryListResponse>('/history', params),
 
-  getDetail: (id: number) =>
+  getDetail: (id: string) =>
     api.get<PostHistoryDetail>(`/history/${id}`),
 
-  delete: (id: number) =>
+  delete: (id: string) =>
     api.delete(`/history/${id}`),
 
-  toggleFavorite: (id: number, data: ToggleFavoriteRequest) =>
+  toggleFavorite: (id: string, data: ToggleFavoriteRequest) =>
     api.patch<PostHistoryBase>(`/history/${id}/favorite`, data),
 
-  updateTags: (id: number, data: UpdateTagsRequest) =>
+  updateTags: (id: string, data: UpdateTagsRequest) =>
     api.patch<PostHistoryBase>(`/history/${id}/tags`, data),
+
+  saveEdit: (id: string, data: { post_index: number; content: string; original_content?: string }) =>
+    api.post<PostEdit>(`/history/${id}/edits`, data),
+
+  getEdits: (id: string) =>
+    api.get<PostEdit[]>(`/history/${id}/edits`),
+  
 }
 
 export const topicsApi = {
@@ -54,6 +64,17 @@ export const topicsApi = {
 export const codeApi = {
   fromPost: (data: CodeFromPostRequest) =>
     api.post<CodeFromPostResponse>('/code/from-post', data),
+}
+
+export const codePresetsApi = {
+  list: () => api.get<CodePreset[]>('/code-presets'),
+  create: (data: Omit<CodePreset, 'id' | 'created_at'>) => api.post<CodePreset>('/code-presets', data),
+  delete: (id: string) => api.delete(`/code-presets/${id}`),
+}
+
+export const settingsApi = {
+  get: () => api.get<AppSettings>('/settings'),
+  update: (data: Partial<AppSettings>) => api.put<AppSettings>('/settings', data),
 }
 
 export const healthApi = {

@@ -3,71 +3,78 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 from pydantic import BaseModel, Field, ConfigDict
 
+from app.schemas.code_example import CodeExampleResponse
 
-class EstiloEnum(str, Enum):
-    TECNICO = "Técnico"
+
+class StyleEnum(str, Enum):
+    TECHNICAL = "Technical"
     STORYTELLING = "Storytelling"
-    OPINIAO = "Opinião/Controverso"
-    EDUCACIONAL = "Educacional"
-    CARREIRA = "Carreira/Soft Skills"
-    HUMOR = "Humor/Tecnologia"
-    MINIMALISTA = "Minimalista"
+    OPINION = "Opinion/Controversial"
+    EDUCATIONAL = "Educational"
+    CAREER = "Career/Soft Skills"
+    HUMOR = "Humor/Technology"
+    MINIMALIST = "Minimalist"
     CASE_STUDY = "Case Study"
-    TRENDS = "Trends/Novidades"
-    PERSONAL = "Pessoal/Autobiográfico"
+    TRENDS = "Trends/News"
+    PERSONAL = "Personal/Autobiographical"
 
 
-class PublicoEnum(str, Enum):
-    JUNIORES = "Desenvolvedores Júnior"
-    PLENOS = "Desenvolvedores Pleno"
-    SENIORES = "Desenvolvedores Sênior"
-    TECH_LEADS = "Tech Leads / Arquitetos"
-    GESTORES = "Gestores / CTOs"
+class AudienceEnum(str, Enum):
+    JUNIOR = "Junior Developers"
+    MID = "Mid Developers"
+    SENIOR = "Senior Developers"
+    TECH_LEADS = "Tech Leads / Architects"
+    MANAGERS = "Managers / CTOs"
     FULLSTACK = "Full Stack"
     BACKEND = "Backend"
     FRONTEND = "Frontend"
     DEVOPS = "DevOps / SRE"
-    DATA = "Data / IA"
+    DATA = "Data / AI"
     MOBILE = "Mobile"
-    GERAL = "Geral / Todos"
+    GENERAL = "General / All"
 
 
-class ExperienciaEnum(str, Enum):
-    INICIANTE = "Iniciante (0-2 anos)"
-    INTERMEDIARIO = "Intermediário (2-5 anos)"
-    AVANCADO = "Avançado (5-10 anos)"
-    EXPERT = "Expert (10+ anos)"
+class ExperienceEnum(str, Enum):
+    BEGINNER = "Beginner (0-2 years)"
+    INTERMEDIATE = "Intermediate (2-5 years)"
+    ADVANCED = "Advanced (5-10 years)"
+    EXPERT = "Expert (10+ years)"
 
 
-class ObjetivoEnum(str, Enum):
-    ENGAJAMENTO = "Engajamento / Comentários"
-    AUTORIDADE = "Autoridade / Personal Branding"
-    LEADS = "Geração de Leads / Vendas"
-    NETWORKING = "Networking / Conexões"
-    EDUCAR = "Educar / Compartilhar Conhecimento"
-    CONTRATACAO = "Atrair Oportunidades / Contratação"
+class ObjectiveEnum(str, Enum):
+    ENGAGEMENT = "Engagement / Comments"
+    AUTHORITY = "Authority / Personal Branding"
+    LEADS = "Lead Generation / Sales"
+    NETWORKING = "Networking / Connections"
+    EDUCATE = "Educate / Share Knowledge"
+    HIRING = "Attract Opportunities / Hiring"
 
 
-class FormatoEnum(str, Enum):
-    LISTICLE = "Listicle (5 dicas, 3 erros...)"
-    STORYTELLING = "Storytelling (História pessoal)"
-    ANTES_DEPOIS = "Antes/Depois (Transformação)"
-    PERGUNTA = "Pergunta Aberta (Engajamento)"
-    OPINIAO = "Opinião Forte (Controversa)"
-    TUTORIAL = "Mini Tutorial (Passo a passo)"
+class FormatEnum(str, Enum):
+    LISTICLE = "Listicle (5 tips, 3 mistakes...)"
+    STORYTELLING = "Storytelling (Personal story)"
+    BEFORE_AFTER = "Before/After (Transformation)"
+    OPEN_QUESTION = "Open Question (Engagement)"
+    STRONG_OPINION = "Strong Opinion (Controversial)"
+    TUTORIAL = "Mini Tutorial (Step by step)"
 
 
 class GeneratePostRequest(BaseModel):
-    tema: str = Field(..., min_length=1, max_length=500)
-    estilo: EstiloEnum
-    publico: PublicoEnum
-    experiencia: ExperienciaEnum
-    objetivo: ObjetivoEnum
-    formato: FormatoEnum
-    incluir_codigo: bool = False
-    incluir_visual: bool = False
+    topic: str = Field(..., min_length=1, max_length=500)
+    style: StyleEnum
+    audience: AudienceEnum
+    experience: ExperienceEnum
+    objective: ObjectiveEnum
+    format: FormatEnum
+    include_code: bool = False
+    include_visual: bool = False
+    include_hashtags: bool = True
+    include_hooks: bool = True
+    include_review: bool = True
     guidelines: Optional[str] = None
-    quantidade: int = Field(default=3, ge=1, le=5)
+    quantity: int = Field(default=3, ge=1, le=10)
+    language: Optional[str] = Field(default="en", pattern="^(pt|en|es)$")
+    max_length: Optional[int] = Field(default=2000, ge=10, le=10000)
 
 
 class GeneratePostResponse(BaseModel):
@@ -85,33 +92,35 @@ class TaskStatusResponse(BaseModel):
 
 
 class PostHistoryBase(BaseModel):
-    id: int
-    tema: str
-    estilo: str
-    publico: str
-    experiencia: str
-    objetivo: str
-    formato: str
-    incluir_codigo: bool
-    incluir_visual: bool
+    id: str
+    topic: str
+    style: str
+    audience: str
+    experience: str
+    objective: str
+    format: str
+    include_code: bool
+    include_visual: bool
     status: str
-    favorito: bool
+    is_favorite: bool
     tags: List[str]
     created_at: datetime
     updated_at: datetime
     completed_at: Optional[datetime] = None
     error_message: Optional[str] = None
+    is_edited: bool = False
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class PostHistoryDetail(PostHistoryBase):
     posts_data: Optional[List[Dict[str, Any]]] = None
-    topicos_pesquisados: Optional[List[str]] = None
+    researched_topics: Optional[List[str]] = None
     hashtags: Optional[List[Dict[str, Any]]] = None
     hooks: Optional[List[Dict[str, Any]]] = None
     review: Optional[Dict[str, Any]] = None
-    visual_sugestao: Optional[Dict[str, Any]] = None
+    visual_suggestion: Optional[Dict[str, Any]] = None
+    code_examples: Optional[List[CodeExampleResponse]] = None
 
 
 class PostHistoryListResponse(BaseModel):
@@ -122,7 +131,7 @@ class PostHistoryListResponse(BaseModel):
 
 
 class ToggleFavoriteRequest(BaseModel):
-    favorito: bool
+    is_favorite: bool
 
 
 class UpdateTagsRequest(BaseModel):
@@ -140,12 +149,21 @@ class CodeFromPostResponse(BaseModel):
 
 
 class SuggestTopicsRequest(BaseModel):
-    contexto: Optional[str] = None
-    quantidade: int = Field(default=5, ge=1, le=10)
+    context: Optional[str] = None
+    country: Optional[str] = None
+    quantity: int = Field(default=5, ge=1, le=10)
 
 
 class SuggestTopicsResponse(BaseModel):
     topics: List[Dict[str, Any]]
+
+
+class TopicSuggestion(BaseModel):
+    title: str
+    description: str
+    suggested_format: str
+    angle: str
+    suggested_hashtags: List[str]
 
 
 class HealthResponse(BaseModel):

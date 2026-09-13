@@ -1,62 +1,67 @@
-export type EstiloEnum =
-  | 'Técnico'
+export type StyleEnum =
+  | 'Technical'
   | 'Storytelling'
-  | 'Opinião/Controverso'
-  | 'Educacional'
-  | 'Carreira/Soft Skills'
-  | 'Humor/Tecnologia'
-  | 'Minimalista'
+  | 'Opinion/Controversial'
+  | 'Educational'
+  | 'Career/Soft Skills'
+  | 'Humor/Technology'
+  | 'Minimalist'
   | 'Case Study'
-  | 'Trends/Novidades'
-  | 'Pessoal/Autobiográfico'
+  | 'Trends/News'
+  | 'Personal/Autobiographical';
 
-export type PublicoEnum =
-  | 'Desenvolvedores Júnior'
-  | 'Desenvolvedores Pleno'
-  | 'Desenvolvedores Sênior'
-  | 'Tech Leads / Arquitetos'
-  | 'Gestores / CTOs'
+export type AudienceEnum =
+  | 'Junior Developers'
+  | 'Mid Developers'
+  | 'Senior Developers'
+  | 'Tech Leads / Architects'
+  | 'Managers / CTOs'
   | 'Full Stack'
   | 'Backend'
   | 'Frontend'
   | 'DevOps / SRE'
-  | 'Data / IA'
+  | 'Data / AI'
   | 'Mobile'
-  | 'Geral / Todos'
+  | 'General / All';
 
-export type ExperienciaEnum =
-  | 'Iniciante (0-2 anos)'
-  | 'Intermediário (2-5 anos)'
-  | 'Avançado (5-10 anos)'
-  | 'Expert (10+ anos)'
+export type ExperienceEnum =
+  | 'Beginner (0-2 years)'
+  | 'Intermediate (2-5 years)'
+  | 'Advanced (5-10 years)'
+  | 'Expert (10+ years)';
 
-export type ObjetivoEnum =
-  | 'Engajamento / Comentários'
-  | 'Autoridade / Personal Branding'
-  | 'Geração de Leads / Vendas'
-  | 'Networking / Conexões'
-  | 'Educar / Compartilhar Conhecimento'
-  | 'Atrair Oportunidades / Contratação'
+export type ObjectiveEnum =
+  | 'Engagement / Comments'
+  | 'Authority / Personal Branding'
+  | 'Lead Generation / Sales'
+  | 'Networking / Connections'
+  | 'Educate / Share Knowledge'
+  | 'Attract Opportunities / Hiring';
 
-export type FormatoEnum =
-  | 'Listicle (5 dicas, 3 erros...)'
-  | 'Storytelling (História pessoal)'
-  | 'Antes/Depois (Transformação)'
-  | 'Pergunta Aberta (Engajamento)'
-  | 'Opinião Forte (Controversa)'
-  | 'Mini Tutorial (Passo a passo)'
+export type FormatEnum =
+  | 'Listicle (5 tips, 3 mistakes...)'
+  | 'Storytelling (Personal story)'
+  | 'Before/After (Transformation)'
+  | 'Open Question (Engagement)'
+  | 'Strong Opinion (Controversial)'
+  | 'Mini Tutorial (Step by step)';
 
 export interface GeneratePostRequest {
-  tema: string
-  estilo: EstiloEnum
-  publico: PublicoEnum
-  experiencia: ExperienciaEnum
-  objetivo: ObjetivoEnum
-  formato: FormatoEnum
-  incluir_codigo: boolean
-  incluir_visual: boolean
+  topic: string
+  style: StyleEnum
+  audience: AudienceEnum
+  experience: ExperienceEnum
+  objective: ObjectiveEnum
+  format: FormatEnum
+  include_code: boolean
+  include_visual: boolean
+  include_hashtags: boolean
+  include_hooks: boolean
+  include_review: boolean
   guidelines?: string
-  quantidade: number
+  quantity: number
+  language: string
+  max_length?: number
 }
 
 export interface GeneratePostResponse {
@@ -74,64 +79,75 @@ export interface TaskStatusResponse {
 }
 
 export interface PostHistoryBase {
-  id: number
-  tema: string
-  estilo: string
-  publico: string
-  experiencia: string
-  objetivo: string
-  formato: string
-  incluir_codigo: boolean
-  incluir_visual: boolean
+  id: string
+  topic: string
+  style: string
+  audience: string
+  experience: string
+  objective: string
+  format: string
+  include_code: boolean
+  include_visual: boolean
   status: string
-  favorito: boolean
+  is_favorite: boolean
+  is_edited?: boolean
   tags: string[]
   created_at: string
   updated_at: string
   completed_at?: string
   error_message?: string
 }
-
+export type CodeExample = {
+  language: string;
+  code: string;
+};
 export interface PostHistoryDetail extends PostHistoryBase {
   posts_data?: PostVariation[]
-  topicos_pesquisados?: string[]
+  researched_topics?: string[]
   hashtags?: HashtagItem[]
   hooks?: HookItem[]
   review?: ReviewResult
-  visual_sugestao?: VisualSuggestion
+  visual_suggestion?: VisualSuggestion
+  code_examples?: CodeExample[]
 }
 
 export interface PostVariation {
-  variacao: number
-  conteudo: string
+  variation: number
+  content: string
+  is_edited?: boolean
+  review?: ReviewResult | null
+  visual_suggestion?: VisualSuggestion | null
+  hashtags?: HashtagItem[] | null
+  hooks?: HookItem[] | null
+  code_examples?: CodeExample[] | null
 }
 
 export interface HashtagItem {
   tag: string
-  relevancia: string
-  volume_estimado: string
+  relevance: string
+  estimated_volume: string
 }
 
 export interface HookItem {
-  tipo: string
-  texto: string
-  por_que_funciona: string
+  type: string
+  text: string
+  why_it_works: string
 }
 
 export interface ReviewResult {
   score: number
-  pontos_fortes: string[]
-  pontos_melhoria: string[]
-  sugestoes: string[]
+  strengths: string[]
+  improvements: string[]
+  suggestions: string[]
 }
 
 export interface VisualSuggestion {
-  tipo_conteudo: string
-  descricao_visual: string
-  codigo_exemplo?: string
-  codigo_linguagem?: string
-  ferramentas_sugeridas: string[]
-  dicas_composicao: string[]
+  content_type: string
+  visual_description: string
+  code_example?: string
+  code_language?: string
+  suggested_tools: string[]
+  composition_tips: string[]
 }
 
 export interface PostHistoryListResponse {
@@ -142,7 +158,7 @@ export interface PostHistoryListResponse {
 }
 
 export interface ToggleFavoriteRequest {
-  favorito: boolean
+  is_favorite: boolean
 }
 
 export interface UpdateTagsRequest {
@@ -160,8 +176,9 @@ export interface CodeFromPostResponse {
 }
 
 export interface SuggestTopicsRequest {
-  contexto?: string
-  quantidade: number
+  context?: string
+  country?: string
+  quantity: number
 }
 
 export interface SuggestTopicsResponse {
@@ -169,11 +186,11 @@ export interface SuggestTopicsResponse {
 }
 
 export interface TopicSuggestion {
-  titulo: string
-  descricao: string
-  formato_sugerido: string
-  angulo: string
-  hashtags_sugeridas: string[]
+  title: string
+  description: string
+  suggested_format: string
+  angle: string
+  suggested_hashtags: string[]
 }
 
 export interface HealthResponse {
@@ -182,3 +199,36 @@ export interface HealthResponse {
 }
 
 export type TaskStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled'
+
+export interface PostEdit {
+  id: number
+  post_id: number
+  post_index: number
+  content: string
+  original_content?: string
+  created_at: string
+}
+
+export interface CodePreset {
+  id?: string
+  name: string
+  theme: string
+  language: string
+  font_family: string
+  font_size: string
+  padding: string
+  window_style: string
+  show_line_numbers: boolean
+  created_at?: string
+}
+
+export interface AppSettings {
+  id?: number
+  provider: string
+  model_name: string
+  api_key?: string
+  tavily_api_key?: string
+  temperature: number
+  language: string
+  updated_at?: string
+}

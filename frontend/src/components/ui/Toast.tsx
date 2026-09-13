@@ -1,75 +1,67 @@
-import { useEffect, Fragment } from 'react'
-import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from 'lucide-react'
-import { cn } from '@/utils/cn'
+import { AlertTriangle, CheckCircle, Info, X } from "lucide-react";
+import { cn } from "@/utils/cn";
 
-export interface ToastProps {
-  id: string
-  type: 'success' | 'error' | 'warning' | 'info'
-  message: string
-  onClose: (id: string) => void
-  duration?: number
+export interface ToastItem {
+  id: string;
+  type: "success" | "error" | "warning" | "info";
+  message: string;
+  duration?: number;
 }
 
-const icons = {
-  success: CheckCircle,
-  error: AlertCircle,
-  warning: AlertTriangle,
-  info: Info,
+export type ToastProps = ToastItem;
+
+export interface ToastContainerProps {
+  toasts: ToastItem[];
+  onRemove: (id: string) => void;
 }
 
-const typeClasses = {
-  success: 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300 border-green-200 dark:border-green-800',
-  error: 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 border-red-200 dark:border-red-800',
-  warning: 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800',
-  info: 'bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800',
-}
-
-export function Toast({ id, type, message, onClose, duration = 3000 }: ToastProps) {
-  const Icon = icons[type]
-
-  useEffect(() => {
-    if (duration > 0) {
-      const timer = setTimeout(() => onClose(id), duration)
-      return () => clearTimeout(timer)
-    }
-  }, [id, duration, onClose])
+export function ToastContainer({ toasts, onRemove }: ToastContainerProps) {
+  if (toasts.length === 0) return null;
 
   return (
     <div
-      className={cn(
-        'flex items-start gap-3 p-4 rounded-lg border shadow-lg animate-in',
-        typeClasses[type]
-      )}
-      role="alert"
+      aria-live="polite"
+      className="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none max-w-sm w-full px-4 sm:px-0"
     >
-      <Icon className="h-5 w-5 flex-shrink-0 mt-0.5" />
-      <p className="flex-1 text-sm leading-relaxed">{message}</p>
-      <button
-        onClick={() => onClose(id)}
-        className={cn(
-          'p-1 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors',
-          'text-current opacity-70 hover:opacity-100'
-        )}
-        aria-label="Fechar"
-      >
-        <X className="h-4 w-4" />
-      </button>
-    </div>
-  )
-}
+      {toasts.map((toast) => (
+        <div
+          key={toast.id}
+          className={cn(
+            "pointer-events-auto flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-md border shadow-md transition-all duration-200 animate-in fade-in slide-in-from-bottom-2",
+            "bg-white dark:bg-surface-900 border-surface-200 dark:border-surface-800 text-xs text-surface-800 dark:text-surface-200"
+          )}
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            {toast.type === "success" && (
+              <CheckCircle className="h-4 w-4 shrink-0 text-emerald-500" />
+            )}
+            {toast.type === "error" && (
+              <AlertTriangle className="h-4 w-4 shrink-0 text-red-500" />
+            )}
+            {toast.type === "warning" && (
+              <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500" />
+            )}
+            {toast.type === "info" && (
+              <Info className="h-4 w-4 shrink-0 text-blue-500" />
+            )}
 
-export function ToastContainer({ toasts, onClose }: { toasts: ToastProps[]; onClose: (id: string) => void }) {
-  if (toasts.length === 0) return null
-
-  return (
-    <Fragment>
-      <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none">
-        {toasts.map((toast) => (
-          <div key={toast.id} className="pointer-events-auto w-full max-w-sm">
-            <Toast {...toast} onClose={onClose} />
+            <p className="leading-snug truncate font-medium text-[11px] sm:text-xs">
+              {toast.message}
+            </p>
           </div>
-        ))}
-      </div>
-    </Fragment>
-  )
+
+          <button
+            type="button"
+            onClick={() => onRemove(toast.id)}
+            className="shrink-0 text-surface-400 hover:text-surface-600 dark:hover:text-surface-200 transition-colors p-0.5 rounded"
+            aria-label="Fechar notificação"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      ))}
+    </div>
+  );
 }
+
+export const Toast = ToastContainer;

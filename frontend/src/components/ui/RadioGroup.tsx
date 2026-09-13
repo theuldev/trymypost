@@ -8,12 +8,21 @@ export interface RadioGroupProps {
   className?: string
 }
 
-export function RadioGroup({ name, value, onChange, children, className }: RadioGroupProps) {
+export function RadioGroup({
+  name,
+  value,
+  onChange,
+  children,
+  className,
+}: RadioGroupProps) {
   return (
     <div
       role="radiogroup"
       aria-label={name}
-      className={cn('flex flex-wrap gap-3', className)}
+      className={cn(
+        'flex flex-wrap gap-2',
+        className
+      )}
     >
       {children}
     </div>
@@ -27,43 +36,80 @@ export interface RadioGroupItemProps {
   disabled?: boolean
 }
 
-export function RadioGroupItem({ value, children, className, disabled }: RadioGroupItemProps) {
+export function RadioGroupItem({
+  value,
+  children,
+  className,
+  disabled,
+}: RadioGroupItemProps) {
   const id = `radio-${value.replace(/\s+/g, '-').toLowerCase()}`
-  
+
   return (
     <label
+      htmlFor={id}
       className={cn(
-        'relative inline-flex items-center gap-2 cursor-pointer',
-        'px-4 py-3 rounded-xl border-2 transition-all duration-150',
-        'text-sm font-medium text-slate-900 dark:text-slate-100',
-        disabled 
-          ? 'opacity-50 cursor-not-allowed' 
-          : 'hover:bg-slate-50 dark:hover:bg-slate-800',
-        'focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2'
+        'relative inline-flex items-center gap-2',
+        'min-h-8 px-3 py-1.5',
+        'rounded-md border',
+        'text-xs font-medium',
+        'text-surface-700 dark:text-surface-300',
+        'border-surface-200 dark:border-surface-700',
+        'bg-white dark:bg-surface-900',
+        'transition-colors duration-150',
+
+        !disabled && [
+          'cursor-pointer',
+          'hover:bg-surface-50 dark:hover:bg-surface-800',
+          'hover:border-surface-300 dark:hover:border-surface-600',
+        ],
+
+        disabled && [
+          'cursor-not-allowed',
+          'opacity-50',
+        ],
+
+        className
       )}
     >
       <input
         type="radio"
-        name={id.split('-')[0]} // This is a simplification - in real app use context
         value={value}
         id={id}
         disabled={disabled}
-        className="sr-only peer"
-        aria-label={children as string}
+        className="peer sr-only"
       />
-      <span className={cn(
-        'w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-150',
-        'peer-checked:bg-blue-600 peer-checked:border-blue-600',
-        'peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 peer-focus:ring-offset-2',
-        'border-slate-300 dark:border-slate-600',
-        'peer-checked:text-white',
-        disabled && 'opacity-50'
-      )}>
-        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-        </svg>
+
+      <span
+        className={cn(
+          'flex h-3.5 w-3.5 shrink-0 items-center justify-center',
+          'rounded-full border',
+          'border-surface-300 dark:border-surface-600',
+          'transition-colors duration-150',
+
+          'peer-checked:border-primary-600',
+          'peer-checked:bg-primary-600',
+
+          'peer-focus-visible:ring-2',
+          'peer-focus-visible:ring-primary-500/30',
+
+          'peer-disabled:opacity-50'
+        )}
+        aria-hidden="true"
+      >
+        <span
+          className={cn(
+            'h-1.5 w-1.5 rounded-full',
+            'bg-white',
+            'opacity-0',
+            'transition-opacity duration-150',
+            'peer-checked:opacity-100'
+          )}
+        />
       </span>
-      <span className="peer-disabled:opacity-50">{children}</span>
+
+      <span className="truncate">
+        {children}
+      </span>
     </label>
   )
 }

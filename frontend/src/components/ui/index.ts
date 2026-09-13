@@ -4,7 +4,7 @@ export { IconButton } from './IconButton'
 export type { IconButtonProps } from './IconButton'
 
 export { Input, Textarea, Label, FileInput } from './Input'
-export type { InputProps, TextareaProps, FileInputProps } from './Input'
+export type { InputProps, TextareaProps, FileInputProps, LabelProps } from './Input'
 
 export { Select } from './Select'
 export type { SelectProps, SelectOption } from './Select'
@@ -26,5 +26,8 @@ export type { ToastProps } from './Toast'
 
 export { Badge } from './Badge'
 export type { BadgeProps } from './Badge'
+
+export { Slider } from './Slider'
+export type { SliderProps } from './Slider'
 
 export { Pagination } from '../Pagination'

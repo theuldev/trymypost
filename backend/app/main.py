@@ -11,7 +11,6 @@ from app.core.config import get_settings
 from app.db.session import init_db
 from app.api.routes import router as api_router
 
-
 settings = get_settings()
 
 

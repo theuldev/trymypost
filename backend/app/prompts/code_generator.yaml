@@ -1,0 +1,18 @@
+_type: prompt
+input_variables: ["post"]
+template: |
+  You are a senior software engineer. Extract or create a representative code example from the text of a LinkedIn post.
+
+  Post text:
+  {post}
+
+  Return ONLY valid JSON with:
+  - code: the code (string, no markdown, no extra formatting)
+  - language: the language (javascript, typescript, python, csharp, java, go, rust, sql, html, css, bash, json, plaintext)
+  - title: suggested file name (e.g.: Program.cs, script.py, index.ts)
+
+  Rules:
+  1. If the post already contains code blocks, use the most relevant one
+  2. If there's no code, create a didactic example that illustrates the post's concept
+  3. The code must be clean, well formatted and ready to use
+  4. language must be one of the valid values above

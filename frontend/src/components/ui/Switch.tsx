@@ -6,39 +6,82 @@ export interface SwitchProps {
   checked: boolean
   onChange: (checked: boolean) => void
   id?: string
+  disabled?: boolean
 }
 
-export function Switch({ label, description, checked, onChange, id }: SwitchProps) {
-  const switchId = id || label?.toLowerCase().replace(/\s+/g, '-')
+export function Switch({
+  label,
+  description,
+  checked,
+  onChange,
+  id,
+  disabled
+}: SwitchProps) {
+  const switchId =
+    id || label?.toLowerCase().replace(/\s+/g, '-') || 'switch'
 
   return (
-    <div className="flex items-start gap-3">
+    <div className="flex items-start gap-2.5">
       <button
         type="button"
         role="switch"
         aria-checked={checked}
+        aria-labelledby={label ? `${switchId}-label` : undefined}
+        aria-describedby={description ? `${switchId}-description` : undefined}
         id={switchId}
         onClick={() => onChange(!checked)}
+        disabled={disabled}
         className={cn(
-          'relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors mt-0.5',
-          checked ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-700'
+          'relative mt-0.5 inline-flex h-5 w-9 shrink-0',
+          'items-center rounded-full',
+          'transition-colors duration-150',
+          'focus:outline-none focus-visible:ring-2',
+          'focus-visible:ring-primary-500/30',
+
+          checked
+            ? 'bg-primary-600'
+            : 'bg-surface-200 dark:bg-surface-700',
+
+          'disabled:cursor-not-allowed disabled:opacity-50'
         )}
       >
         <span
+          aria-hidden="true"
           className={cn(
-            'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform',
-            checked ? 'translate-x-6' : 'translate-x-1'
+            'pointer-events-none block h-3.5 w-3.5 rounded-full',
+            'bg-white',
+            'transition-transform duration-150',
+            checked ? 'translate-x-4' : 'translate-x-1'
           )}
         />
       </button>
-      <div>
-        {label && (
-          <label htmlFor={switchId} className="text-sm font-semibold text-slate-900 dark:text-slate-100 cursor-pointer">
-            {label}
-          </label>
-        )}
-        {description && <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{description}</p>}
-      </div>
+
+      {(label || description) && (
+        <div className="min-w-0">
+          {label && (
+            <label
+              id={`${switchId}-label`}
+              htmlFor={switchId}
+              className={cn(
+                'block text-xs font-medium',
+                'text-surface-700 dark:text-surface-300',
+                'cursor-pointer'
+              )}
+            >
+              {label}
+            </label>
+          )}
+
+          {description && (
+            <p
+              id={`${switchId}-description`}
+              className="mt-0.5 text-[11px] leading-relaxed text-surface-500 dark:text-surface-400"
+            >
+              {description}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   )
-} 
+}

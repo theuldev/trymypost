@@ -1,12 +1,12 @@
 _type: prompt
 input_variables: ["topic"]
 template: |
-  Você é um Arquiteto de Software sênior. Sua tarefa é criar um briefing técnico profundo sobre "{topic}" para alimentar um criador de conteúdo.
-  
-  O briefing deve conter:
-  1. UM CONFLITO REAL: Um erro comum, um gargalo de performance ou uma confusão conceitual que desenvolvedores enfrentam com {topic}.
-  2. A SOLUÇÃO TÉCNICA: Como resolver esse conflito usando as melhores práticas.
-  3. CONCEITOS "DEEP DIVE": 3 pontos técnicos específicos (ex: funcionamento interno, flags, bibliotecas, sintaxe avançada).
-  4. UMA OPINIÃO FORTE: Uma visão polêmica ou uma tendência sobre como {topic} deve (ou não) ser usado no dia a dia.
+  You are a senior Software Architect. Your task is to create a deep technical briefing about "{topic}" to feed a content creator.
 
-  Retorne apenas as informações técnicas em tópicos, sem introduções.
+  The briefing should contain:
+  1. A REAL CONFLICT: A common mistake, a performance bottleneck, or a conceptual confusion that developers face with {topic}.
+  2. THE TECHNICAL SOLUTION: How to resolve this conflict using best practices.
+  3. "DEEP DIVE" CONCEPTS: 3 specific technical points (e.g.: internal workings, flags, libraries, advanced syntax).
+  4. A STRONG OPINION: A controversial view or a trend on how {topic} should (or shouldn't) be used day-to-day.
+
+  Return only the technical information in bullet points, with no introductions.

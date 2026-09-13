@@ -7,11 +7,13 @@ interface UIState {
   darkMode: boolean
   toasts: Toast[]
   modals: Record<string, boolean>
+  appLanguage: string
   
   toggleSidebar: () => void
   setSidebarOpen: (open: boolean) => void
   toggleDarkMode: () => void
   setDarkMode: (dark: boolean) => void
+  setAppLanguage: (lang: string) => void
   addToast: (toast: Omit<Toast, 'id'>) => string
   removeToast: (id: string) => void
   openModal: (key: string) => void
@@ -32,6 +34,7 @@ export const useUIStore = create<UIState>()(
       darkMode: false,
       toasts: [],
       modals: {},
+      appLanguage: 'pt-BR',
 
       toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
       setSidebarOpen: (open) => set({ sidebarOpen: open }),
@@ -44,6 +47,7 @@ export const useUIStore = create<UIState>()(
         document.documentElement.classList.toggle('dark', dark)
         set({ darkMode: dark })
       },
+      setAppLanguage: (lang) => set({ appLanguage: lang }),
 
       addToast: (toast) => {
         const id = Math.random().toString(36).slice(2)
@@ -71,7 +75,7 @@ export const useUIStore = create<UIState>()(
     }),
     {
       name: 'ui-store',
-      partialize: (state) => ({ darkMode: state.darkMode, sidebarOpen: state.sidebarOpen }),
+      partialize: (state) => ({ darkMode: state.darkMode, sidebarOpen: state.sidebarOpen, appLanguage: state.appLanguage }),
     }
   )
 )
@@ -81,8 +85,14 @@ interface GenerationState {
   currentStep: string
   progress: number
   isGenerating: boolean
+  result: Record<string, any> | null
+  style: string
+  formData: Record<string, any> | null
   
   setGeneration: (taskId: string) => void
+  setResult: (result: Record<string, any> | null) => void
+  setStyle: (style: string) => void
+  saveFormData: (formData: Record<string, any>) => void
   clearGeneration: () => void
   updateProgress: (step: string, progress: number) => void
 }
@@ -92,13 +102,23 @@ export const useGenerationStore = create<GenerationState>((set) => ({
   currentStep: '',
   progress: 0,
   isGenerating: false,
+  result: null,
+  style: 'Technical',
+  formData: null,
 
   setGeneration: (taskId) => set({
     currentTaskId: taskId,
     isGenerating: true,
-    currentStep: 'Iniciando...',
+    currentStep: 'Starting...',
     progress: 0,
+    result: null,
   }),
+
+  setResult: (result) => set({ result }),
+
+  setStyle: (style) => set({ style }),
+
+  saveFormData: (formData) => set({ formData }),
 
   clearGeneration: () => set({
     currentTaskId: null,
