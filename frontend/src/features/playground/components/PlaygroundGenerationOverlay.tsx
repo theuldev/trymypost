@@ -1,4 +1,5 @@
 import { GenerationLoadingOverlay } from "@/components/ui/GenerationLoadingOverlay";
+import { useTranslation } from "@/i18n";
 
 interface PlaygroundGenerationOverlayProps {
   currentStep: string;
@@ -9,12 +10,14 @@ export function PlaygroundGenerationOverlay({
   currentStep,
   progress,
 }: PlaygroundGenerationOverlayProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="mx-auto w-full max-w-3xl px-4">
       <GenerationLoadingOverlay
-        currentStep={currentStep || "Gerando posts..."}
+        currentStep={currentStep || t("pg.generatingPosts")}
         progress={progress}
-        message="A IA está analisando parâmetros e criando as variações do seu post..."
+        message={t("pg.loadingMessage")}
       />
     </div>
   );

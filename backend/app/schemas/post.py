@@ -8,15 +8,9 @@ from app.schemas.code_example import CodeExampleResponse
 
 class StyleEnum(str, Enum):
     TECHNICAL = "Technical"
-    STORYTELLING = "Storytelling"
-    OPINION = "Opinion/Controversial"
-    EDUCATIONAL = "Educational"
-    CAREER = "Career/Soft Skills"
     HUMOR = "Humor/Technology"
     MINIMALIST = "Minimalist"
-    CASE_STUDY = "Case Study"
     TRENDS = "Trends/News"
-    PERSONAL = "Personal/Autobiographical"
 
 
 class AudienceEnum(str, Enum):
@@ -60,21 +54,25 @@ class FormatEnum(str, Enum):
 
 
 class GeneratePostRequest(BaseModel):
-    topic: str = Field(..., min_length=1, max_length=500)
-    style: StyleEnum
-    audience: AudienceEnum
-    experience: ExperienceEnum
-    objective: ObjectiveEnum
-    format: FormatEnum
+    topic: str = Field(default="", max_length=500)
+    input_mode: str = Field(default="structured", pattern="^(structured|description)$")
+    description: Optional[str] = Field(default=None, max_length=5000)
+    visual_brief: Optional[str] = Field(default=None, max_length=1000)
+    style: Optional[StyleEnum] = None
+    audience: Optional[AudienceEnum] = None
+    experience: Optional[ExperienceEnum] = None
+    objective: Optional[ObjectiveEnum] = None
+    format: Optional[FormatEnum] = None
     include_code: bool = False
     include_visual: bool = False
     include_hashtags: bool = True
     include_hooks: bool = True
     include_review: bool = True
+    use_rag: bool = False
     guidelines: Optional[str] = None
     quantity: int = Field(default=3, ge=1, le=10)
     language: Optional[str] = Field(default="en", pattern="^(pt|en|es)$")
-    max_length: Optional[int] = Field(default=2000, ge=10, le=10000)
+    max_length: Optional[int] = Field(default=None, ge=10, le=10000)
 
 
 class GeneratePostResponse(BaseModel):
@@ -91,6 +89,13 @@ class TaskStatusResponse(BaseModel):
     error: Optional[str] = None
 
 
+class EditorialStatusEnum(str, Enum):
+    DRAFT = "draft"
+    APPROVED = "approved"
+    SCHEDULED = "scheduled"
+    PUBLISHED = "published"
+
+
 class PostHistoryBase(BaseModel):
     id: str
     topic: str
@@ -102,6 +107,10 @@ class PostHistoryBase(BaseModel):
     include_code: bool
     include_visual: bool
     status: str
+    editorial_status: str = "draft"
+    scheduled_at: Optional[datetime] = None
+    published_at: Optional[datetime] = None
+    generated_image_url: Optional[str] = None
     is_favorite: bool
     tags: List[str]
     created_at: datetime
@@ -109,6 +118,28 @@ class PostHistoryBase(BaseModel):
     completed_at: Optional[datetime] = None
     error_message: Optional[str] = None
     is_edited: bool = False
+    total_cost_usd: Optional[float] = None
+    total_tokens: Optional[int] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UpdateEditorialStatusRequest(BaseModel):
+    editorial_status: EditorialStatusEnum
+    scheduled_at: Optional[datetime] = None
+    published_at: Optional[datetime] = None
+
+
+class CalendarItem(BaseModel):
+    id: str
+    topic: str
+    style: str
+    format: str
+    editorial_status: str
+    scheduled_at: Optional[datetime] = None
+    published_at: Optional[datetime] = None
+    created_at: datetime
+    is_favorite: bool
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -1,50 +1,90 @@
-import { useState, useEffect, useRef } from "react";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect, useRef, ReactNode } from "react";
+import { useParams, useLocation } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  ChevronLeft,
   Copy,
   Download,
   RotateCcw,
   Save,
   Check,
-  Edit3,
-  FileText,
-  Type,
   Bold,
   Italic,
   Underline,
+  Columns2,
+  SquarePen,
 } from "lucide-react";
 
-const FONT_FAMILY_OPTIONS = [
-  { value: "font-sans", label: "Sans (Inter)" },
-  { value: "font-serif", label: "Serif (Georgia)" },
-  { value: "font-mono", label: "Monospace (Code)" },
-];
-
-const FONT_SIZE_OPTIONS = [
-  { value: "text-xs", label: "Pequeno (xs)" },
-  { value: "text-sm", label: "Médio (sm)" },
-  { value: "text-base", label: "Normal (base)" },
-  { value: "text-lg", label: "Grande (lg)" },
-];
 import { Button } from "@/components/ui/Button";
-import { Textarea, Select } from "@/components/ui";
+import { Select } from "@/components/ui";
 import { Badge } from "@/components/ui/Badge";
 import { postsApi } from "@/services/posts";
 import { useUIStore } from "@/store";
+import { useTranslation } from "@/i18n";
 import { cn } from "@/utils/cn";
 
 interface LocationState {
   initialContent?: string;
   initialTopic?: string;
+  initialPostIndex?: number;
+}
+
+function ToolButton({
+  onClick,
+  title,
+  active,
+  disabled,
+  children,
+}: {
+  onClick: () => void;
+  title: string;
+  active?: boolean;
+  disabled?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      disabled={disabled}
+      className={cn(
+        "flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors",
+        active
+          ? "bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300"
+          : "text-surface-500 hover:bg-surface-100 hover:text-surface-700 dark:text-surface-400 dark:hover:bg-surface-800 dark:hover:text-surface-200",
+        disabled && "cursor-not-allowed opacity-40 hover:bg-transparent"
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+function ToolbarDivider() {
+  return (
+    <span className="mx-1 h-4 w-px shrink-0 bg-surface-200 dark:bg-surface-700" />
+  );
 }
 
 export function EditorPage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const location = useLocation();
   const { addToast } = useUIStore();
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+
+  const FONT_FAMILY_OPTIONS = [
+    { value: "font-sans", label: t("editor.fontSans") },
+    { value: "font-serif", label: t("editor.fontSerif") },
+    { value: "font-mono", label: t("editor.fontMono") },
+  ];
+
+  const FONT_SIZE_OPTIONS = [
+    { value: "text-xs", label: t("editor.fontSizeXs") },
+    { value: "text-sm", label: t("editor.fontSizeSm") },
+    { value: "text-base", label: t("editor.fontSizeBase") },
+    { value: "text-lg", label: t("editor.fontSizeLg") },
+  ];
 
   const locationState = location.state as LocationState | null;
 
@@ -54,16 +94,18 @@ export function EditorPage() {
     enabled: Boolean(id),
   });
 
+  const postIndex = locationState?.initialPostIndex ?? 0;
+
   const originalText =
-    post?.posts_data?.[0]?.content ??
+    post?.posts_data?.[postIndex]?.content ??
     locationState?.initialContent ??
     "Exemplo de texto do post original gerado pela IA...";
 
-  const topicTitle = post?.topic ?? locationState?.initialTopic ?? "Edição de Post";
+  const topicTitle = post?.topic ?? locationState?.initialTopic ?? t("editor.defaultTopic");
 
   const [editedText, setEditedText] = useState<string>(originalText);
   const [copied, setCopied] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<"split" | "edit_only">("split");
+  const [viewMode, setViewMode] = useState<"split" | "edit_only">("split");
 
   const [fontFamily, setFontFamily] = useState<string>("font-sans");
   const [fontSize, setFontSize] = useState<string>("text-xs");
@@ -82,34 +124,35 @@ export function EditorPage() {
     try {
       await navigator.clipboard.writeText(editedText);
       setCopied(true);
-      addToast({ type: "success", message: "Versão editada copiada!" });
+      addToast({ type: "success", message: t("editor.toastCopied") });
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      addToast({ type: "error", message: "Erro ao copiar" });
+      addToast({ type: "error", message: t("editor.toastCopyError") });
     }
   };
 
   const handleRestore = () => {
     setEditedText(originalText);
-    addToast({ type: "info", message: "Restaurado para a versão original" });
+    addToast({ type: "info", message: t("editor.toastRestored") });
   };
 
   const handleSave = async () => {
     if (id) {
       try {
         await postsApi.saveEdit(id, {
-          post_index: 0,
+          post_index: postIndex,
           content: editedText,
           original_content: originalText,
         });
-        addToast({ type: "success", message: "Edição salva no banco de dados com sucesso!" });
+        queryClient.invalidateQueries({ queryKey: ["post-edits", id] });
+        addToast({ type: "success", message: t("editor.toastSavedDb") });
       } catch (e) {
-        addToast({ type: "error", message: "Erro ao salvar no banco. Edição salva localmente." });
+        addToast({ type: "error", message: t("editor.toastSaveError") });
         localStorage.setItem(`edited_post_${id}`, editedText);
       }
     } else {
       localStorage.setItem(`edited_post_draft`, editedText);
-      addToast({ type: "success", message: "Rascunho salvo localmente com sucesso!" });
+      addToast({ type: "success", message: t("editor.toastDraftSaved") });
     }
   };
 
@@ -145,203 +188,166 @@ export function EditorPage() {
   const wordCount = editedText.trim() ? editedText.trim().split(/\s+/).length : 0;
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-surface-50 dark:bg-surface-950">
-      <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8 space-y-6">
-        <header className="border-b border-surface-200 pb-4 dark:border-surface-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-              <ChevronLeft className="h-4 w-4 mr-1" /> Voltar
-            </Button>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-base font-semibold text-surface-900 dark:text-surface-50">
-                  Editor de Conteúdo
-                </h1>
-                {isModified ? (
-                  <Badge variant="warning" size="sm" className="text-[10px]">
-                    Modificado
-                  </Badge>
-                ) : (
-                  <Badge variant="neutral" size="sm" className="text-[10px]">
-                    Sem alterações
-                  </Badge>
-                )}
-              </div>
-              <p className="text-xs text-surface-500 dark:text-surface-400 truncate max-w-md">
-                {topicTitle}
-              </p>
-            </div>
-          </div>
+    <div className="flex min-h-screen flex-col overflow-x-hidden bg-surface-100 dark:bg-surface-950">
+      <div className="mx-auto w-full max-w-6xl px-4 pt-4">
+      </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleRestore}
-              disabled={!isModified}
-              leftIcon={<RotateCcw className="h-3.5 w-3.5" />}
-            >
-              Restaurar Original
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleCopy}
-              leftIcon={copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-            >
-              {copied ? "Copiado" : "Copiar"}
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleDownload}
-              leftIcon={<Download className="h-3.5 w-3.5" />}
-            >
-              Baixar TXT
-            </Button>
-
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={handleSave}
-              leftIcon={<Save className="h-3.5 w-3.5" />}
-            >
-              Salvar Edição
-            </Button>
-          </div>
-        </header>
-
-        <div className="flex items-center justify-between text-xs text-surface-500 border-b border-surface-200 dark:border-surface-800 pb-3">
-          <div className="flex items-center gap-3">
-            <span>{charCount} caracteres</span>
-            <span>•</span>
-            <span>{wordCount} palavras</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setActiveTab("split")}
-              className={cn(
-                "px-2.5 py-1 rounded text-xs font-medium transition-colors",
-                activeTab === "split"
-                  ? "bg-surface-200 dark:bg-surface-800 text-surface-900 dark:text-surface-100"
-                  : "text-surface-500 hover:text-surface-900 dark:hover:text-surface-100"
-              )}
-            >
-              Lado a Lado
-            </button>
-            <button
-              onClick={() => setActiveTab("edit_only")}
-              className={cn(
-                "px-2.5 py-1 rounded text-xs font-medium transition-colors",
-                activeTab === "edit_only"
-                  ? "bg-surface-200 dark:bg-surface-800 text-surface-900 dark:text-surface-100"
-                  : "text-surface-500 hover:text-surface-900 dark:hover:text-surface-100"
-              )}
-            >
-              Apenas Editor
-            </button>
-          </div>
+      {/* Toolbar flutuante, estilo Google Docs */}
+      <div className="sticky top-3 z-10 mx-auto mt-3 flex w-fit max-w-[calc(100%-1rem)] flex-wrap items-center justify-center gap-0.5 rounded-md border border-surface-200 bg-white px-1.5 py-1 shadow-card dark:border-surface-800 dark:bg-surface-900">
+        <div className="w-36">
+          <Select
+            value={fontFamily}
+            onChange={setFontFamily}
+            options={FONT_FAMILY_OPTIONS}
+          />
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-2 p-2 rounded-md border border-surface-200 dark:border-surface-800 bg-surface-100/50 dark:bg-surface-900/40">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5">
-              <Type className="h-3.5 w-3.5 text-surface-400 shrink-0" />
-              <div className="w-36">
-                <Select
-                  value={fontFamily}
-                  onChange={setFontFamily}
-                  options={FONT_FAMILY_OPTIONS}
-                />
-              </div>
-            </div>
-
-            <div className="w-28">
-              <Select
-                value={fontSize}
-                onChange={setFontSize}
-                options={FONT_SIZE_OPTIONS}
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1 border-l border-surface-200 dark:border-surface-800 pl-3">
-            <button
-              type="button"
-              onClick={() => applyFormat("**", "**")}
-              title="Negrito (**texto**)"
-              className="p-1.5 rounded hover:bg-surface-200 dark:hover:bg-surface-800 text-surface-700 dark:text-surface-300 transition-colors"
-            >
-              <Bold className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => applyFormat("_", "_")}
-              title="Itálico (_texto_)"
-              className="p-1.5 rounded hover:bg-surface-200 dark:hover:bg-surface-800 text-surface-700 dark:text-surface-300 transition-colors"
-            >
-              <Italic className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => applyFormat("<u>", "</u>")}
-              title="Sublinhado (<u>texto</u>)"
-              className="p-1.5 rounded hover:bg-surface-200 dark:hover:bg-surface-800 text-surface-700 dark:text-surface-300 transition-colors"
-            >
-              <Underline className="h-4 w-4" />
-            </button>
-          </div>
+        <div className="w-28">
+          <Select
+            value={fontSize}
+            onChange={setFontSize}
+            options={FONT_SIZE_OPTIONS}
+          />
         </div>
 
-        <main
+        <ToolbarDivider />
+
+        <ToolButton onClick={() => applyFormat("**", "**")} title={t("editor.bold")}>
+          <Bold className="h-3.5 w-3.5" />
+        </ToolButton>
+        <ToolButton onClick={() => applyFormat("_", "_")} title={t("editor.italic")}>
+          <Italic className="h-3.5 w-3.5" />
+        </ToolButton>
+        <ToolButton onClick={() => applyFormat("<u>", "</u>")} title={t("editor.underline")}>
+          <Underline className="h-3.5 w-3.5" />
+        </ToolButton>
+
+        <ToolbarDivider />
+
+        <ToolButton
+          onClick={() => setViewMode("split")}
+          title={t("editor.splitView")}
+          active={viewMode === "split"}
+        >
+          <Columns2 className="h-3.5 w-3.5" />
+        </ToolButton>
+        <ToolButton
+          onClick={() => setViewMode("edit_only")}
+          title={t("editor.editOnly")}
+          active={viewMode === "edit_only"}
+        >
+          <SquarePen className="h-3.5 w-3.5" />
+        </ToolButton>
+
+        <ToolbarDivider />
+
+        <ToolButton onClick={handleCopy} title={t("editor.copyText")}>
+          {copied ? (
+            <Check className="h-3.5 w-3.5 text-emerald-500" />
+          ) : (
+            <Copy className="h-3.5 w-3.5" />
+          )}
+        </ToolButton>
+        <ToolButton onClick={handleDownload} title={t("editor.downloadTxt")}>
+          <Download className="h-3.5 w-3.5" />
+        </ToolButton>
+        <ToolButton
+          onClick={handleRestore}
+          title={t("editor.restoreOriginal")}
+          disabled={!isModified}
+        >
+          <RotateCcw className="h-3.5 w-3.5" />
+        </ToolButton>
+
+        <ToolbarDivider />
+
+
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={handleSave}
+          leftIcon={<Save className="h-3.5 w-3.5" />}
+        >
+          {t("editor.save")}
+        </Button>
+      </div>
+
+      {/* Folhas de documento */}
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
+        <div
           className={cn(
             "grid gap-6",
-            activeTab === "split" ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1"
+            viewMode === "split" ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1"
           )}
         >
-          {activeTab === "split" && (
-            <section className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-surface-500 dark:text-surface-400 flex items-center gap-1.5">
-                  <FileText className="h-3.5 w-3.5" /> Versão Original (Leitura)
+          {viewMode === "split" && (
+            <section className="overflow-hidden rounded-lg border border-surface-200 bg-white shadow-card dark:border-surface-800 dark:bg-surface-900">
+              <div className="flex items-center justify-between border-b border-surface-200 px-6 py-2 dark:border-surface-800">
+                <span className="text-[11px] font-medium text-surface-400">
+                  {t("editor.originalVersion")}
                 </span>
                 <Badge variant="neutral" size="sm" className="text-[10px]">
-                  Original
+                  {t("editor.reading")}
                 </Badge>
               </div>
-
-              <div className="border border-surface-200 dark:border-surface-800 rounded-md bg-white dark:bg-surface-900 p-4 min-h-[400px] max-h-[600px] overflow-y-auto">
-                <p className={cn("whitespace-pre-wrap leading-relaxed text-surface-600 dark:text-surface-400", fontFamily, fontSize)}>
-                  {isLoading ? "Carregando texto original..." : originalText}
+              <div className="max-h-[70vh] min-h-[400px] overflow-y-auto px-8 py-6">
+                <p
+                  className={cn(
+                    "whitespace-pre-wrap leading-relaxed text-surface-600 dark:text-surface-400",
+                    fontFamily,
+                    fontSize
+                  )}
+                >
+                  {isLoading ? t("editor.loadingOriginal") : originalText}
                 </p>
               </div>
             </section>
           )}
 
-          <section className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-surface-700 dark:text-surface-300 flex items-center gap-1.5">
-                <Edit3 className="h-3.5 w-3.5 text-primary-500" /> Versão Editada
+          <section className="overflow-hidden rounded-lg border border-surface-200 bg-white shadow-card dark:border-surface-800 dark:bg-surface-900">
+            <div className="flex items-center justify-between border-b border-surface-200 px-6 py-2 dark:border-surface-800">
+              <span className="text-[11px] font-medium text-surface-400">
+                {t("editor.editing")}
               </span>
-              <Badge variant={isModified ? "warning" : "primary"} size="sm" className="text-[10px]">
-                {isModified ? "Editada" : "Sem alterações"}
+              <Badge
+                variant={isModified ? "warning" : "primary"}
+                size="sm"
+                className="text-[10px]"
+              >
+                {isModified ? t("editor.edited") : t("editor.original")}
               </Badge>
             </div>
-
-            <Textarea
+            <textarea
               ref={textareaRef}
               value={editedText}
-              onChange={setEditedText}
-              rows={20}
-              placeholder="Digite ou edite o texto do seu post aqui..."
-              className={cn("leading-relaxed min-h-[400px] max-h-[600px]", fontFamily, fontSize)}
+              onChange={(e) => setEditedText(e.target.value)}
+              placeholder={t("editor.placeholder")}
+              className={cn(
+                "max-h-[70vh] min-h-[400px] w-full resize-none border-0 bg-transparent px-8 py-6 leading-relaxed text-surface-800 placeholder:text-surface-400 focus:outline-none dark:text-surface-200 dark:placeholder:text-surface-500",
+                fontFamily,
+                fontSize
+              )}
             />
           </section>
-        </main>
-      </div>
+        </div>
+      </main>
+
+      {/* Barra de status */}
+      <footer className="flex items-center justify-between border-t border-surface-200 bg-white px-4 py-1.5 text-[11px] text-surface-400 dark:border-surface-800 dark:bg-surface-900">
+        <span>
+          {t("editor.statusCounts", {
+            words: `${wordCount} ${
+              wordCount === 1 ? t("editor.wordSingular") : t("editor.wordPlural")
+            }`,
+            chars: charCount,
+          })}
+        </span>
+        <span>
+          {isModified
+            ? t("editor.unsavedChanges")
+            : t("editor.synced")}
+        </span>
+      </footer>
     </div>
   );
 }

@@ -4,7 +4,6 @@ from pydantic import Field
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Carrega .env da raiz do projeto explicitamente
 ROOT_DIR = Path(__file__).parent.parent.parent.parent
 load_dotenv(ROOT_DIR / ".env")
 
@@ -14,7 +13,21 @@ class Settings(BaseSettings):
     debug: bool = False
     api_prefix: str = "/api/v1"
 
-    database_url: str = Field(default="sqlite+aiosqlite:///./trymypost.db", env="DATABASE_URL")
+    database_url: str = Field(
+        default="postgresql+asyncpg://trymypost:trymypost@localhost:5433/trymypost",
+        env="DATABASE_URL",
+    )
+
+    media_dir: str = Field(default="media", env="MEDIA_DIR")
+
+    vector_database_url: str = Field(
+        default="postgresql+asyncpg://trymypost:trymypost@localhost:5433/trymypost_rag",
+        env="VECTOR_DATABASE_URL",
+    )
+    google_embedding_model: str = Field(
+        default="models/gemini-embedding-001",
+        env="GOOGLE_EMBEDDING_MODEL",
+    )
 
     rabbitmq_url: str = Field(
         default="amqp://guest:guest@localhost/",
@@ -22,7 +35,7 @@ class Settings(BaseSettings):
     )
 
     google_api_key: str = Field(..., env="GOOGLE_API_KEY")
-    tavily_api_key: str = Field(default="", env="TAVILY_API_KEY")  # opcional para não quebrar se faltar
+    tavily_api_key: str = Field(default="", env="TAVILY_API_KEY")  
 
     gemini_model: str = "gemini-2.5-flash"
     gemini_temperature: float = 0.9

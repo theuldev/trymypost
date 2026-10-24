@@ -7,20 +7,21 @@ import { Button } from "@/components/ui/Button";
 import { Select, Textarea } from "@/components/ui";
 import { GenerationLoadingOverlay } from "@/components/ui/GenerationLoadingOverlay";
 import { topicsApi } from "@/services/posts";
-import { useUIStore } from "@/store";
+import { useTopicsFormStore, useUIStore } from "@/store";
+import { useTranslation } from "@/i18n";
 import type { TopicSuggestion } from "@/types";
 
 const COUNTRY_OPTIONS = [
-  { value: "Brazil", label: "Brasil" },
-  { value: "United States", label: "Estados Unidos" },
-  { value: "Portugal", label: "Portugal" },
-  { value: "Spain", label: "Espanha" },
-  { value: "United Kingdom", label: "Reino Unido" },
-  { value: "Canada", label: "Canadá" },
-  { value: "Germany", label: "Alemanha" },
-  { value: "France", label: "França" },
-  { value: "Netherlands", label: "Países Baixos" },
-  { value: "Australia", label: "Austrália" },
+  { value: "Brazil", labelKey: "topics.country.brazil" },
+  { value: "United States", labelKey: "topics.country.unitedStates" },
+  { value: "Portugal", labelKey: "topics.country.portugal" },
+  { value: "Spain", labelKey: "topics.country.spain" },
+  { value: "United Kingdom", labelKey: "topics.country.unitedKingdom" },
+  { value: "Canada", labelKey: "topics.country.canada" },
+  { value: "Germany", labelKey: "topics.country.germany" },
+  { value: "France", labelKey: "topics.country.france" },
+  { value: "Netherlands", labelKey: "topics.country.netherlands" },
+  { value: "Australia", labelKey: "topics.country.australia" },
 ];
 
 const QUANTITY_OPTIONS = Array.from({ length: 10 }, (_, index) => {
@@ -33,11 +34,13 @@ const QUANTITY_OPTIONS = Array.from({ length: 10 }, (_, index) => {
 
 export function TopicsPage() {
   const { addToast } = useUIStore();
+  const { t } = useTranslation();
   const navigate = useNavigate();
+  const { draft, saveDraft } = useTopicsFormStore();
 
-  const [context, setContext] = useState("");
-  const [quantity, setQuantity] = useState(5);
-  const [selectedCountry, setSelectedCountry] = useState("Brazil");
+  const [context, setContext] = useState(draft?.context ?? "");
+  const [quantity, setQuantity] = useState(draft?.quantity ?? 5);
+  const [selectedCountry, setSelectedCountry] = useState(draft?.country ?? "Brazil");
   const [isLoading, setIsLoading] = useState(false);
 
   const transformTopics = (apiTopics: any[]): TopicSuggestion[] => {
@@ -58,7 +61,7 @@ export function TopicsPage() {
 
       addToast({
         type: "success",
-        message: `${data.topics.length} topics suggested!`,
+        message: t("topics.toast.success", { count: data.topics.length }),
       });
 
       navigate("/topics/results", {
@@ -72,7 +75,7 @@ export function TopicsPage() {
 
       addToast({
         type: "error",
-        message: "Error suggesting topics",
+        message: t("topics.toast.error"),
       });
     },
   });
@@ -83,10 +86,12 @@ export function TopicsPage() {
     if (!context.trim()) {
       addToast({
         type: "warning",
-        message: "Please enter a context first",
+        message: t("topics.toast.contextRequired"),
       });
       return;
     }
+
+    saveDraft({ context, quantity, country: selectedCountry });
 
     setIsLoading(true);
 
@@ -103,8 +108,8 @@ export function TopicsPage() {
         <GenerationLoadingOverlay
           fullScreen
           isVisible={isLoading}
-          title="Generating AI suggestions..."
-          subtitle="Creating tailored topic ideas for your content strategy"
+          title={t("topics.loading.title")}
+          subtitle={t("topics.loading.subtitle")}
         />
       </div>
     );
@@ -119,11 +124,11 @@ export function TopicsPage() {
           </div>
 
           <h1 className="text-base font-semibold text-surface-900 dark:text-surface-50">
-            Suggested Topics
+            {t("topics.page.title")}
           </h1>
 
           <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
-            Generate content ideas based on your context.
+            {t("topics.page.subtitle")}
           </p>
         </header>
 
@@ -131,18 +136,18 @@ export function TopicsPage() {
           <section className="space-y-4">
             <div>
               <h2 className="text-sm font-semibold text-surface-900 dark:text-surface-50">
-                Context
+                {t("topics.context.title")}
               </h2>
 
               <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
-                Describe the subject, audience or direction you want to explore.
+                {t("topics.context.description")}
               </p>
             </div>
 
             <Textarea
               value={context}
               onChange={setContext}
-              placeholder="e.g. React performance, advanced TypeScript, developer career..."
+              placeholder={t("topics.context.placeholder")}
               rows={4}
               disabled={isLoading}
             />
@@ -151,27 +156,30 @@ export function TopicsPage() {
           <section className="space-y-4">
             <div>
               <h2 className="text-sm font-semibold text-surface-900 dark:text-surface-50">
-                Configuration
+                {t("topics.config.title")}
               </h2>
 
               <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
-                Define how many ideas you want and how they should be structured.
+                {t("topics.config.description")}
               </p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
               <Select
-                label="Quantity"
+                label={t("topics.quantity.label")}
                 value={String(quantity)}
                 onChange={(value) => setQuantity(Number(value))}
                 options={QUANTITY_OPTIONS}
                 disabled={isLoading}
               />
               <Select
-                label="Country"
+                label={t("topics.country.label")}
                 value={selectedCountry}
                 onChange={setSelectedCountry}
-                options={COUNTRY_OPTIONS}
+                options={COUNTRY_OPTIONS.map((country) => ({
+                  value: country.value,
+                  label: t(country.labelKey),
+                }))}
                 disabled={isLoading}
               />
             </div>
@@ -184,7 +192,7 @@ export function TopicsPage() {
               leftIcon={<Sparkles className="h-4 w-4" />}
               className="w-full sm:w-auto"
             >
-              {isLoading ? "Generating..." : "Suggest topics"}
+              {isLoading ? t("topics.submitting") : t("topics.submit")}
             </Button>
           </div>
         </form>

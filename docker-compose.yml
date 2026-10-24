@@ -54,6 +54,64 @@ services:
       - trymypost-network
 
 
+  postgres:
+    image: postgres:16-alpine
+    container_name: trymypost-postgres
+    hostname: postgres
+
+    environment:
+      POSTGRES_USER: trymypost
+      POSTGRES_PASSWORD: trymypost
+      POSTGRES_DB: trymypost
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trymypost -d trymypost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+    restart: unless-stopped
+
+    networks:
+      - trymypost-network
+
+
+  vectordb:
+    image: pgvector/pgvector:pg16
+    container_name: trymypost-vectordb
+    hostname: vectordb
+
+    environment:
+      POSTGRES_USER: trymypost
+      POSTGRES_PASSWORD: trymypost
+      POSTGRES_DB: trymypost_rag
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - vectordb_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trymypost -d trymypost_rag"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+    restart: unless-stopped
+
+    networks:
+      - trymypost-network
+
+
   backend:
     build:
       context: ./backend
@@ -63,8 +121,8 @@ services:
       - .env
     environment:
       RABBITMQ_URL: amqp://trymypost:trymypost@rabbitmq:5672/
-    volumes:
-      - ./backend:/app
+      VECTOR_DATABASE_URL: postgresql+asyncpg://trymypost:trymypost@vectordb:5432/trymypost_rag
+      DATABASE_URL: postgresql+asyncpg://trymypost:trymypost@postgres:5432/trymypost
 
     ports:
       - "8000:8000"
@@ -72,9 +130,21 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
-
-      redis:
+      postgres:
         condition: service_healthy
+      vectordb:
+        condition: service_healthy
+
+    develop:
+      watch:
+        - action: sync
+          path: ./backend
+          target: /app
+          ignore:
+            - __pycache__/
+            - .git/
+        - action: rebuild
+          path: ./backend/requirements.txt
 
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
@@ -101,15 +171,63 @@ services:
     environment:
       RABBITMQ_URL: amqp://trymypost:trymypost@rabbitmq:5672/
       REDIS_URL: redis://redis:6379/0
-
-    volumes:
-      - ./backend:/app
+      VECTOR_DATABASE_URL: postgresql+asyncpg://trymypost:trymypost@vectordb:5432/trymypost_rag
+      DATABASE_URL: postgresql+asyncpg://trymypost:trymypost@postgres:5432/trymypost
 
     depends_on:
       rabbitmq:
         condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./backend
+          target: /app
+          ignore:
+            - __pycache__/
+            - .git/
 
     command: ["python", "run_worker.py"]
+
+    restart: unless-stopped
+
+    networks:
+      - trymypost-network
+
+
+  email-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+
+    container_name: trymypost-email-worker
+
+    env_file:
+      - .env
+    environment:
+      RABBITMQ_URL: amqp://trymypost:trymypost@rabbitmq:5672/
+      REDIS_URL: redis://redis:6379/0
+      VECTOR_DATABASE_URL: postgresql+asyncpg://trymypost:trymypost@vectordb:5432/trymypost_rag
+      DATABASE_URL: postgresql+asyncpg://trymypost:trymypost@postgres:5432/trymypost
+
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./backend
+          target: /app
+          ignore:
+            - __pycache__/
+            - .git/
+
+    command: ["python", "worker.py", "email-worker"]
 
     restart: unless-stopped
 
@@ -124,8 +242,29 @@ services:
 
     container_name: trymypost-frontend
 
+    environment:
+      VITE_API_PROXY_TARGET: http://backend:8000
+
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+
     ports:
-      - "5173:80"
+      - "5173:5173"
+
+    # Live-reload dev flow: run with `docker compose up --watch`.
+    # Bind mounts are NOT used on purpose — Windows bind mounts break fs
+    # events (no inotify) and make chokidar polling flap mtimes, which
+    # causes constant page reloads. `compose watch` syncs file contents
+    # INTO the container, where inotify works natively.
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend
+          target: /app
+          ignore:
+            - node_modules/
+            - dist/
+        - action: rebuild
+          path: ./frontend/package.json
 
     depends_on:
       backend:
@@ -137,9 +276,72 @@ services:
       - trymypost-network
 
 
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: trymypost-pgadmin
+
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@trymypost.dev}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-trymypost}
+
+    ports:
+      - "5050:80"
+
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./pgadmin/servers.json:/pgadmin4/servers.json:ro
+      - ./pgadmin/pgpass:/pgpass:ro
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      vectordb:
+        condition: service_healthy
+
+    restart: unless-stopped
+
+    networks:
+      - trymypost-network
+
+
+  minio:
+    image: quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z
+    container_name: trymypost-minio
+    hostname: minio
+
+    command: ["minio", "server", "/data", "--console-address", ":9001"]
+
+    ports:
+      - "9000:9000"
+      - "9002:9001"
+
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+
+    volumes:
+      - minio_data:/data
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+
+    restart: unless-stopped
+
+    networks:
+      - trymypost-network
+
+
 volumes:
   rabbitmq_data:
   redis_data:
+  postgres_data:
+  minio_data:
+  vectordb_data:
+  pgadmin_data:
 
 networks:
   trymypost-network:

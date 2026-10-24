@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
 import {
@@ -7,102 +7,35 @@ import {
   X,
   Save,
   Loader2,
-  Image as ImageIcon,
   Code2,
 } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { Button, IconButton } from "@/components/ui";
 import { Input, Textarea, Select, Switch, Label } from "@/components/ui";
-import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
 import { codeApi, codePresetsApi } from "@/services/posts";
 import { useUIStore } from "@/store";
+import { useTranslation } from "@/i18n";
 import html2canvas from "html2canvas";
-import Prism from "prismjs";
-import "prismjs/components/prism-csharp";
-import "prismjs/components/prism-python";
-import "prismjs/components/prism-sql";
-import "prismjs/components/prism-bash";
-import "prismjs/components/prism-javascript";
-import "prismjs/components/prism-typescript";
-import "prismjs/components/prism-java";
-import "prismjs/components/prism-go";
-import "prismjs/components/prism-rust";
-import "prismjs/components/prism-json";
-import "prismjs/components/prism-css";
-import "prismjs/components/prism-markup";
-
-const LANGUAGES = [
-  { value: "javascript", label: "JavaScript" },
-  { value: "typescript", label: "TypeScript" },
-  { value: "csharp", label: "C#" },
-  { value: "python", label: "Python" },
-  { value: "html", label: "HTML" },
-  { value: "css", label: "CSS" },
-  { value: "sql", label: "SQL" },
-  { value: "bash", label: "Shell/Bash" },
-  { value: "java", label: "Java" },
-  { value: "go", label: "Go" },
-  { value: "rust", label: "Rust" },
-  { value: "json", label: "JSON" },
-  { value: "plaintext", label: "Texto Plano" },
-];
-
-const THEMES = [
-  { value: "vs2022-blue", label: "VS 2022 Blue", gradient: "linear-gradient(135deg, #1b3a5c, #1e3a5f)" },
-  { value: "vscode-dark", label: "VS Code Dark", gradient: "linear-gradient(135deg, #1a1a2e, #1e1e2e)" },
-  { value: "midnight", label: "Midnight", gradient: "linear-gradient(135deg, #0f2027, #2c5364)" },
-  { value: "emerald", label: "Emerald", gradient: "linear-gradient(135deg, #11998e, #38ef7d)" },
-  { value: "github-dark", label: "GitHub Dark", gradient: "linear-gradient(135deg, #0d1117, #21262d)" },
-  { value: "dracula", label: "Dracula", gradient: "linear-gradient(135deg, #282a36, #6272a4)" },
-  { value: "one-dark", label: "One Dark", gradient: "linear-gradient(135deg, #282c34, #21252b)" },
-  { value: "nord", label: "Nord", gradient: "linear-gradient(135deg, #2e3440, #434c5e)" },
-  { value: "dark", label: "Cinza Escuro", gradient: "linear-gradient(135deg, #27272a, #09090b)" },
-  { value: "transparent", label: "Transparente", gradient: "transparent" },
-];
-
-const FONT_FAMILIES = [
-  { value: "'Cascadia Code', 'Fira Code', 'Consolas', monospace", label: "Cascadia Code" },
-  { value: "'Consolas', 'Courier New', monospace", label: "Consolas" },
-  { value: "'Fira Code', 'Courier New', monospace", label: "Fira Code" },
-  { value: "'JetBrains Mono', 'Courier New', monospace", label: "JetBrains Mono" },
-];
-
-const FONT_SIZES = [
-  { value: "12px", label: "Pequeno (12px)" },
-  { value: "14px", label: "Médio (14px)" },
-  { value: "16px", label: "Grande (16px)" },
-];
-
-const PADDINGS = [
-  { value: "20px", label: "Pequeno (20px)" },
-  { value: "36px", label: "Médio (36px)" },
-  { value: "52px", label: "Grande (52px)" },
-];
-
-const WINDOW_STYLES = [
-  { value: "mac", label: "macOS" },
-  { value: "simple", label: "Simples" },
-  { value: "none", label: "Sem barra" },
-];
-
-const VS_CSHARP_CSS = `
-  .vs-csharp { color: #DCDCDC; }
-  .vs-csharp .token.comment, .vs-csharp .token.doctag, .vs-csharp .token.prolog { color: #57A64A; }
-  .vs-csharp .token.string, .vs-csharp .token.char { color: #D69D85; }
-  .vs-csharp .token.keyword { color: #569CD6; }
-  .vs-csharp .token.class-name, .vs-csharp .token.namespace, .vs-csharp .token.type { color: #4EC9B0; }
-  .vs-csharp .token.function, .vs-csharp .token.method, .vs-csharp .token.property { color: #DCDCAA; }
-  .vs-csharp .token.variable { color: #9CDCFE; }
-  .vs-csharp .token.number, .vs-csharp .token.boolean { color: #B5CEA8; }
-  .vs-csharp .token.control-flow { color: #D8A0DF; }
-  .vs-csharp .token.operator, .vs-csharp .token.punctuation { color: #DCDCDC; }
-`;
+import { CodeImagePreview } from "../components/CodeImagePreview";
+import {
+  THEMES,
+  FONT_FAMILIES,
+  DEFAULT_SYNTAX_THEME,
+  getLanguageOptions,
+  getThemeOptions,
+  getSyntaxThemeOptions,
+  getFontFamilyOptions,
+  getFontSizeOptions,
+  getPaddingOptions,
+  getWindowStyleOptions,
+} from "../constants";
 
 interface Preset {
   name: string;
   theme: string;
   language: string;
+  syntaxTheme?: string;
   fontFamily: string;
   fontSize: string;
   padding: string;
@@ -112,6 +45,7 @@ interface Preset {
 
 export function CodeImagePage() {
   const { addToast } = useUIStore();
+  const { t } = useTranslation();
   const location = useLocation();
   const navState = location.state as {
     initialCode?: string;
@@ -119,8 +53,6 @@ export function CodeImagePage() {
     initialTitle?: string;
   } | null;
   const previewRef = useRef<HTMLDivElement>(null);
-  const codeRef = useRef<HTMLElement>(null);
-  const lineNumbersRef = useRef<HTMLDivElement>(null);
 
   const [mode, setMode] = useState<"code" | "post">("code");
   const [code, setCode] = useState<string>(
@@ -131,6 +63,7 @@ export function CodeImagePage() {
   const [title, setTitle] = useState<string>(navState?.initialTitle ?? "index.ts");
   const [language, setLanguage] = useState<string>(navState?.initialLanguage ?? "typescript");
   const [theme, setTheme] = useState<string>("vs2022-blue");
+  const [syntaxTheme, setSyntaxTheme] = useState<string>(DEFAULT_SYNTAX_THEME);
   const [fontFamily, setFontFamily] = useState<string>(FONT_FAMILIES[0].value);
   const [fontSize, setFontSize] = useState<string>("14px");
   const [padding, setPadding] = useState<string>("36px");
@@ -139,6 +72,7 @@ export function CodeImagePage() {
   const [isRendering, setIsRendering] = useState<boolean>(false);
   const [showSavePreset, setShowSavePreset] = useState<boolean>(false);
   const [newPresetName, setNewPresetName] = useState<string>("");
+  const [presetToDelete, setPresetToDelete] = useState<any | null>(null);
   const [presets, setPresets] = useState<Preset[]>(() => {
     try {
       const saved = localStorage.getItem("code_image_presets");
@@ -154,33 +88,11 @@ export function CodeImagePage() {
       setCode(data.code);
       if (data.language) setLanguage(data.language.toLowerCase());
       if (data.title) setTitle(data.title);
-      addToast({ type: "success", message: "Código extraído com sucesso" });
+      addToast({ type: "success", message: t("codeimg.toastCodeExtracted") });
       setMode("code");
     },
-    onError: () => addToast({ type: "error", message: "Erro ao extrair código" }),
+    onError: () => addToast({ type: "error", message: t("codeimg.toastExtractError") }),
   });
-
-  const highlightCode = useCallback(() => {
-    if (codeRef.current) {
-      codeRef.current.textContent = code;
-      const grammar = Prism.languages[language] || Prism.languages.plaintext;
-      if (grammar) {
-        codeRef.current.innerHTML = Prism.highlight(code, grammar, language);
-      }
-    }
-  }, [code, language]);
-
-  useEffect(() => {
-    highlightCode();
-  }, [highlightCode]);
-
-  useEffect(() => {
-    if (lineNumbersRef.current && showLineNumbers) {
-      const linesCount = code.split("\n").length;
-      const lineNums = Array.from({ length: linesCount }, (_, i) => i + 1).join("\n");
-      lineNumbersRef.current.textContent = lineNums;
-    }
-  }, [code, showLineNumbers]);
 
   const handleCopy = async () => {
     if (!previewRef.current) return;
@@ -194,11 +106,11 @@ export function CodeImagePage() {
       canvas.toBlob(async (blob) => {
         if (blob) {
           await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-          addToast({ type: "success", message: "Imagem copiada para a área de transferência!" });
+          addToast({ type: "success", message: t("codeimg.toastImageCopied") });
         }
       });
     } catch {
-      addToast({ type: "error", message: "Erro ao copiar imagem" });
+      addToast({ type: "error", message: t("codeimg.toastCopyError") });
     } finally {
       setIsRendering(false);
     }
@@ -217,18 +129,19 @@ export function CodeImagePage() {
       link.download = `code-${title || "snippet"}.png`;
       link.href = canvas.toDataURL("image/png");
       link.click();
-      addToast({ type: "success", message: "Download iniciado!" });
+      addToast({ type: "success", message: t("codeimg.toastDownloadStarted") });
     } catch {
-      addToast({ type: "error", message: "Erro ao baixar imagem" });
+      addToast({ type: "error", message: t("codeimg.toastDownloadError") });
     } finally {
       setIsRendering(false);
     }
   };
 
-  const { data: serverPresets = [], refetch: refetchPresets } = useQuery({
+  const { data: serverPresetsData, refetch: refetchPresets } = useQuery({
     queryKey: ["code-presets"],
     queryFn: () => codePresetsApi.list(),
   });
+  const serverPresets: any[] = Array.isArray(serverPresetsData) ? serverPresetsData : [];
 
   const savePresetMutation = useMutation({
     mutationFn: (presetData: any) => codePresetsApi.create(presetData),
@@ -236,18 +149,19 @@ export function CodeImagePage() {
       refetchPresets();
       setShowSavePreset(false);
       setNewPresetName("");
-      addToast({ type: "success", message: "Preset salvo no banco com sucesso" });
+      addToast({ type: "success", message: t("codeimg.toastPresetSaved") });
     },
-    onError: () => addToast({ type: "error", message: "Erro ao salvar preset no banco" }),
+    onError: () => addToast({ type: "error", message: t("codeimg.toastPresetSaveError") }),
   });
 
   const deletePresetMutation = useMutation({
     mutationFn: (id: string) => codePresetsApi.delete(id),
     onSuccess: () => {
       refetchPresets();
-      addToast({ type: "info", message: "Preset excluído do banco" });
+      setPresetToDelete(null);
+      addToast({ type: "info", message: t("codeimg.toastPresetDeleted") });
     },
-    onError: () => addToast({ type: "error", message: "Erro ao excluir preset" }),
+    onError: () => addToast({ type: "error", message: t("codeimg.toastPresetDeleteError") }),
   });
 
   const handleSavePreset = () => {
@@ -256,6 +170,7 @@ export function CodeImagePage() {
       name: newPresetName.trim(),
       theme,
       language,
+      syntax_theme: syntaxTheme,
       font_family: fontFamily,
       font_size: fontSize,
       padding,
@@ -267,283 +182,278 @@ export function CodeImagePage() {
   const handleApplyPreset = (p: any) => {
     if (p.theme) setTheme(p.theme);
     if (p.language) setLanguage(p.language);
+    setSyntaxTheme(p.syntax_theme || p.syntaxTheme || DEFAULT_SYNTAX_THEME);
     if (p.font_family || p.fontFamily) setFontFamily(p.font_family || p.fontFamily);
     if (p.font_size || p.fontSize) setFontSize(p.font_size || p.fontSize);
     if (p.padding) setPadding(p.padding);
     if (p.window_style || p.windowStyle) setWindowStyle(p.window_style || p.windowStyle);
     if (p.show_line_numbers !== undefined) setShowLineNumbers(p.show_line_numbers);
     else if (p.showLineNumbers !== undefined) setShowLineNumbers(p.showLineNumbers);
-    addToast({ type: "info", message: `Preset "${p.name}" aplicado` });
+    addToast({ type: "info", message: t("codeimg.toastPresetApplied", { name: p.name }) });
   };
 
-  const handleDeletePreset = (id?: string, index?: number) => {
-    if (id) {
-      deletePresetMutation.mutate(id);
+  const handleConfirmDeletePreset = () => {
+    if (presetToDelete?.id) {
+      deletePresetMutation.mutate(presetToDelete.id);
+    } else {
+      setPresetToDelete(null);
     }
   };
 
-  const themeObj = THEMES.find((t) => t.value === theme);
-  const isCSharp = language === "csharp";
-
   return (
-    <div className="min-h-screen bg-surface-50 dark:bg-surface-950 flex flex-col lg:flex-row h-[calc(100vh-4rem)] overflow-hidden">
-      <div className="w-full lg:w-80 border-r border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 overflow-y-auto p-4 flex flex-col gap-4 shrink-0">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-md bg-surface-100 dark:bg-surface-800 flex items-center justify-center text-surface-700 dark:text-surface-300">
-            <Code2 className="h-4 w-4" />
+    <div className="min-h-screen overflow-x-hidden bg-surface-50 dark:bg-surface-950">
+      <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
+        <header className="mx-auto max-w-2xl text-center mb-8">
+          <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-900/20">
+            <Code2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           </div>
-          <div>
-            <h1 className="text-sm font-semibold text-surface-900 dark:text-surface-50">Imagem de Código</h1>
-            <p className="text-[11px] text-surface-500 dark:text-surface-400">Exporte trechos de código em PNG</p>
-          </div>
-        </div>
+          <h1 className="text-base font-semibold text-surface-900 dark:text-surface-50">
+            {t("codeimg.title")}
+          </h1>
+          <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
+            {t("codeimg.description")}
+          </p>
+        </header>
 
-        <div className="flex border-b border-surface-200 dark:border-surface-800 text-xs">
-          <button
-            onClick={() => setMode("code")}
-            className={cn(
-              "flex-1 pb-2 font-medium border-b-2 transition-colors",
-              mode === "code"
-                ? "border-primary-600 text-primary-600 dark:text-primary-400"
-                : "border-transparent text-surface-500 hover:text-surface-700 dark:hover:text-surface-300"
-            )}
-          >
-            Código
-          </button>
-          <button
-            onClick={() => setMode("post")}
-            className={cn(
-              "flex-1 pb-2 font-medium border-b-2 transition-colors",
-              mode === "post"
-                ? "border-primary-600 text-primary-600 dark:text-primary-400"
-                : "border-transparent text-surface-500 hover:text-surface-700 dark:hover:text-surface-300"
-            )}
-          >
-            Gerar a partir do Post
-          </button>
-        </div>
+        <div className="space-y-6">
+          {/* Conteúdo */}
+          <section className="rounded-lg border border-surface-200 bg-white dark:border-surface-800 dark:bg-surface-900">
+            <div className="border-b border-surface-200 px-4 py-2.5 dark:border-surface-800">
+              <div className="flex items-center gap-1 rounded-md bg-surface-100 p-1 dark:bg-surface-800 w-fit">
+                <button
+                  type="button"
+                  onClick={() => setMode("code")}
+                  className={cn(
+                    "rounded px-3 py-1 text-[11px] font-medium transition-colors",
+                    mode === "code"
+                      ? "bg-white text-surface-900 shadow-sm dark:bg-surface-700 dark:text-surface-50"
+                      : "text-surface-500 hover:text-surface-700 dark:hover:text-surface-300"
+                  )}
+                >
+                  {t("codeimg.tabCode")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode("post")}
+                  className={cn(
+                    "rounded px-3 py-1 text-[11px] font-medium transition-colors",
+                    mode === "post"
+                      ? "bg-white text-surface-900 shadow-sm dark:bg-surface-700 dark:text-surface-50"
+                      : "text-surface-500 hover:text-surface-700 dark:hover:text-surface-300"
+                  )}
+                >
+                  {t("codeimg.tabFromPost")}
+                </button>
+              </div>
+            </div>
 
-        <div className="space-y-4 flex-1 text-xs">
-          {mode === "code" ? (
-            <>
-              <div>
-                <Label className="mb-1 text-[11px]">Título / Arquivo</Label>
-                <Input value={title} onChange={setTitle} placeholder="index.ts" />
+            <div className="space-y-3 p-4">
+              {mode === "code" ? (
+                <>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div>
+                      <Label className="mb-1 text-[11px]">{t("codeimg.labelTitleFile")}</Label>
+                      <Input value={title} onChange={setTitle} placeholder="index.ts" />
+                    </div>
+                    <div>
+                      <Label className="mb-1 text-[11px]">{t("codeimg.labelLanguage")}</Label>
+                      <Select value={language} onChange={setLanguage} options={getLanguageOptions(t)} />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="mb-1 text-[11px]">{t("codeimg.labelCode")}</Label>
+                    <Textarea
+                      value={code}
+                      onChange={setCode}
+                      placeholder={t("codeimg.placeholderCode")}
+                      rows={7}
+                      className="font-mono text-xs"
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <Label className="mb-1 text-[11px]">{t("codeimg.labelPostText")}</Label>
+                    <Textarea
+                      value={postText}
+                      onChange={setPostText}
+                      placeholder={t("codeimg.placeholderPostText")}
+                      rows={5}
+                    />
+                  </div>
+                  <div className="flex justify-end">
+                    <Button
+                      size="sm"
+                      onClick={() => generateCodeMutation.mutate({ post: postText })}
+                      loading={generateCodeMutation.isPending}
+                    >
+                      {generateCodeMutation.isPending ? t("codeimg.generating") : t("codeimg.generateCode")}
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          </section>
+
+          {/* Aparência */}
+          <section className="rounded-lg border border-surface-200 bg-white dark:border-surface-800 dark:bg-surface-900">
+            <div className="border-b border-surface-200 px-4 py-2.5 dark:border-surface-800">
+              <h2 className="text-xs font-semibold text-surface-900 dark:text-surface-50">
+                {t("codeimg.sectionAppearance")}
+              </h2>
+            </div>
+
+            <div className="space-y-4 p-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <Label className="mb-1 text-[11px]">{t("codeimg.labelSyntaxTheme")}</Label>
+                  <Select value={syntaxTheme} onChange={setSyntaxTheme} options={getSyntaxThemeOptions(t)} />
+                </div>
+                <div>
+                  <Label className="mb-1 text-[11px]">{t("codeimg.labelFont")}</Label>
+                  <Select value={fontFamily} onChange={setFontFamily} options={getFontFamilyOptions(t)} />
+                </div>
+                <div>
+                  <Label className="mb-1 text-[11px]">{t("codeimg.labelFontSize")}</Label>
+                  <Select value={fontSize} onChange={setFontSize} options={getFontSizeOptions(t)} />
+                </div>
+                <div>
+                  <Label className="mb-1 text-[11px]">{t("codeimg.labelPadding")}</Label>
+                  <Select value={padding} onChange={setPadding} options={getPaddingOptions(t)} />
+                </div>
+                <div>
+                  <Label className="mb-1 text-[11px]">{t("codeimg.labelWindow")}</Label>
+                  <Select value={windowStyle} onChange={setWindowStyle} options={getWindowStyleOptions(t)} />
+                </div>
+                <div className="flex items-end justify-between gap-2 pb-0.5">
+                  <Label className="mb-0 text-[11px]">{t("codeimg.labelLineNumbers")}</Label>
+                  <Switch checked={showLineNumbers} onChange={setShowLineNumbers} />
+                </div>
               </div>
 
               <div>
-                <Label className="mb-1 text-[11px]">Linguagem</Label>
-                <Select value={language} onChange={setLanguage} options={LANGUAGES} />
-              </div>
-
-              <div>
-                <Label className="mb-1 text-[11px]">Código</Label>
-                <Textarea
-                  value={code}
-                  onChange={setCode}
-                  placeholder="Cole seu código..."
-                  rows={7}
-                  className="font-mono text-xs"
-                />
-              </div>
-            </>
-          ) : (
-            <>
-              <div>
-                <Label className="mb-1 text-[11px]">Texto do Post</Label>
-                <Textarea
-                  value={postText}
-                  onChange={setPostText}
-                  placeholder="Cole o texto do post para gerar o código..."
-                  rows={5}
-                />
-              </div>
-              <Button
-                fullWidth
-                size="sm"
-                onClick={() => generateCodeMutation.mutate({ post: postText })}
-                loading={generateCodeMutation.isPending}
-              >
-                {generateCodeMutation.isPending ? "Gerando..." : "Gerar Código"}
-              </Button>
-            </>
-          )}
-
-          <div className="pt-3 space-y-3 border-t border-surface-200 dark:border-surface-800">
-            <div>
-              <Label className="mb-1 text-[11px]">Fonte</Label>
-              <Select value={fontFamily} onChange={setFontFamily} options={FONT_FAMILIES} />
-            </div>
-
-            <div>
-              <Label className="mb-1 text-[11px]">Tamanho da Fonte</Label>
-              <Select value={fontSize} onChange={setFontSize} options={FONT_SIZES} />
-            </div>
-
-            <div>
-              <Label className="mb-1 text-[11px]">Tema do Fundo</Label>
-              <div className="grid grid-cols-5 gap-1.5 pt-1">
-                {THEMES.map((t) => (
-                  <button
-                    key={t.value}
-                    onClick={() => setTheme(t.value)}
-                    className={cn(
-                      "h-7 rounded border transition-all",
-                      theme === t.value
-                        ? "border-primary-500 ring-2 ring-primary-500/20"
-                        : "border-surface-200 dark:border-surface-700 hover:border-surface-400"
-                    )}
-                    style={{ background: t.gradient }}
-                    title={t.label}
-                  />
-                ))}
+                <Label className="mb-1 text-[11px]">{t("codeimg.labelBackgroundTheme")}</Label>
+                <div className="grid grid-cols-5 gap-1.5 pt-1">
+                  {getThemeOptions(t).map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setTheme(opt.value)}
+                      className={cn(
+                        "h-7 rounded-md border transition-all",
+                        theme === opt.value
+                          ? "border-primary-500 ring-2 ring-primary-500/20"
+                          : "border-surface-200 dark:border-surface-700 hover:border-surface-400"
+                      )}
+                      style={{ background: opt.gradient }}
+                      title={opt.label}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
+          </section>
 
-            <div>
-              <Label className="mb-1 text-[11px]">Espaçamento Interno</Label>
-              <Select value={padding} onChange={setPadding} options={PADDINGS} />
+          {/* Pré-visualização */}
+          <section className="overflow-hidden rounded-lg border border-surface-200 bg-white dark:border-surface-800 dark:bg-surface-900">
+            <div className="border-b border-surface-200 px-4 py-2.5 dark:border-surface-800">
+              <h2 className="text-xs font-semibold text-surface-900 dark:text-surface-50">
+                {t("codeimg.previewLabel")}
+              </h2>
             </div>
-
-            <div>
-              <Label className="mb-1 text-[11px]">Janela</Label>
-              <Select value={windowStyle} onChange={setWindowStyle} options={WINDOW_STYLES} />
+            <div className="flex overflow-auto bg-surface-100 p-6 dark:bg-surface-950">
+              <CodeImagePreview
+                ref={previewRef}
+                code={code}
+                language={language}
+                title={title}
+                theme={theme}
+                syntaxTheme={syntaxTheme}
+                fontFamily={fontFamily}
+                fontSize={fontSize}
+                padding={padding}
+                windowStyle={windowStyle}
+                showLineNumbers={showLineNumbers}
+                className="m-auto"
+              />
             </div>
+          </section>
 
-            <div className="flex items-center justify-between pt-1">
-              <Label className="mb-0 text-[11px]">Números de Linha</Label>
-              <Switch checked={showLineNumbers} onChange={setShowLineNumbers} />
-            </div>
-          </div>
-
-          <div className="pt-3 border-t border-surface-200 dark:border-surface-800 space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="mb-0 text-[11px]">Presets Salvos</Label>
+          {/* Presets */}
+          <section className="rounded-lg border border-surface-200 bg-white dark:border-surface-800 dark:bg-surface-900">
+            <div className="flex items-center justify-between border-b border-surface-200 px-4 py-2.5 dark:border-surface-800">
+              <h2 className="text-xs font-semibold text-surface-900 dark:text-surface-50">
+                {t("codeimg.savedPresets")}
+              </h2>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowSavePreset(true)}
                 leftIcon={<Save className="h-3 w-3" />}
               >
-                Salvar
+                {t("codeimg.save")}
               </Button>
             </div>
 
-            {serverPresets.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {serverPresets.map((p, i) => (
-                  <div
-                    key={p.id || i}
-                    onClick={() => handleApplyPreset(p)}
-                    className="flex items-center gap-1.5 px-2 py-1 text-[10px] rounded border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 hover:border-primary-500 cursor-pointer transition-colors"
-                  >
-                    <span
-                      className="w-2 h-2 rounded-full"
-                      style={{ background: THEMES.find((t) => t.value === p.theme)?.gradient || "#666" }}
-                    />
-                    <span className="font-medium truncate max-w-[80px]">{p.name}</span>
-                    <IconButton
-                      variant="ghost"
-                      size="sm"
-                      ariaLabel="Excluir"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeletePreset(p.id, i);
-                      }}
+            <div className="p-4">
+              {serverPresets.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {serverPresets.map((p, i) => (
+                    <div
+                      key={p.id || i}
+                      onClick={() => handleApplyPreset(p)}
+                      className="flex items-center gap-1.5 px-2 py-1 text-[10px] rounded border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 hover:border-primary-500 cursor-pointer transition-colors"
                     >
-                      <X className="h-2.5 w-2.5" />
-                    </IconButton>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+                      <span
+                        className="w-2 h-2 rounded-full"
+                        style={{ background: THEMES.find((opt) => opt.value === p.theme)?.gradient || "#666" }}
+                      />
+                      <span className="font-medium truncate max-w-[80px]">{p.name}</span>
+                      <IconButton
+                        variant="ghost"
+                        size="sm"
+                        ariaLabel={t("codeimg.delete")}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPresetToDelete(p);
+                        }}
+                      >
+                        <X className="h-2.5 w-2.5" />
+                      </IconButton>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[11px] text-surface-400">
+                  {t("codeimg.presetsEmpty")}
+                </p>
+              )}
+            </div>
+          </section>
 
-      <div className="flex-1 flex flex-col overflow-hidden bg-surface-100 dark:bg-surface-950">
-        <div className="px-4 py-3 border-b border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 flex items-center justify-between">
-          <span className="text-xs font-medium text-surface-700 dark:text-surface-300">
-            Pré-visualização da Imagem
-          </span>
-          <div className="flex gap-2">
+          {/* Ações */}
+          <div className="flex flex-col gap-3 border-t border-surface-200 pt-6 dark:border-surface-800 sm:flex-row sm:justify-end">
             <Button
               variant="secondary"
-              size="sm"
+              size="md"
               onClick={handleCopy}
               disabled={isRendering}
               leftIcon={isRendering ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Copy className="h-3.5 w-3.5" />}
             >
-              {isRendering ? "Processando..." : "Copiar Imagem"}
+              {isRendering ? t("codeimg.processing") : t("codeimg.copyImage")}
             </Button>
             <Button
               variant="primary"
-              size="sm"
+              size="md"
               onClick={handleDownload}
               disabled={isRendering}
+              className="sm:min-w-[200px]"
               leftIcon={isRendering ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
             >
-              {isRendering ? "Processando..." : "Baixar PNG"}
+              {isRendering ? t("codeimg.processing") : t("codeimg.downloadPng")}
             </Button>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-auto p-6 flex items-center justify-center">
-          <div
-            ref={previewRef}
-            className="w-full max-w-3xl transition-all"
-            style={{ background: themeObj?.gradient, padding }}
-          >
-            <div
-              className="rounded-md overflow-hidden border border-white/10 shadow-lg bg-[#1e1e1e]"
-            >
-              {isCSharp && <style>{VS_CSHARP_CSS}</style>}
-              {windowStyle !== "none" && (
-                <div
-                  className={cn(
-                    "h-7 flex items-center px-3 border-b border-white/10",
-                    windowStyle === "mac" && "bg-[#1a1a1a]",
-                    windowStyle === "simple" && "bg-[#252526]"
-                  )}
-                >
-                  {windowStyle === "mac" && (
-                    <div className="flex gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f56]" />
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#ffbd2e]" />
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#27c93f]" />
-                    </div>
-                  )}
-                  <div
-                    className={cn(
-                      "flex-1 text-center text-[11px] font-mono text-[#a1a1aa]",
-                      windowStyle === "simple" && "text-left ml-1"
-                    )}
-                  >
-                    {title}
-                  </div>
-                  {windowStyle === "mac" && <div className="w-10" />}
-                </div>
-              )}
-
-              <div className="flex">
-                {showLineNumbers && (
-                  <div
-                    ref={lineNumbersRef}
-                    className="select-none text-[#4b5563] border-r border-white/10 py-3 px-2 text-right font-mono"
-                    style={{ fontSize, whiteSpace: "pre" }}
-                  />
-                )}
-                <pre className="flex-1 min-w-0 overflow-auto p-3.5 m-0" style={{ fontSize }}>
-                  <code
-                    ref={codeRef}
-                    className={`language-${language}${isCSharp ? " vs-csharp" : ""}`}
-                    style={{ fontFamily, fontSize, lineHeight: "1.6", color: isCSharp ? "#DCDCDC" : undefined }}
-                  >
-                    {code || " "}
-                  </code>
-                </pre>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -554,13 +464,13 @@ export function CodeImagePage() {
           setShowSavePreset(false);
           setNewPresetName("");
         }}
-        title="Salvar Preset"
-        description="Nomeie esta configuração para reusar depois"
+        title={t("codeimg.savePresetTitle")}
+        description={t("codeimg.savePresetDesc")}
       >
         <Input
           value={newPresetName}
           onChange={setNewPresetName}
-          placeholder="Ex: Tema VS Code Meu"
+          placeholder={t("codeimg.savePresetPlaceholder")}
           autoFocus
         />
         <div className="flex justify-end gap-2 mt-4">
@@ -571,10 +481,30 @@ export function CodeImagePage() {
               setNewPresetName("");
             }}
           >
-            Cancelar
+            {t("codeimg.cancel")}
           </Button>
           <Button variant="primary" onClick={handleSavePreset} disabled={!newPresetName.trim()}>
-            Salvar
+            {t("codeimg.save")}
+          </Button>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={presetToDelete !== null}
+        onClose={() => setPresetToDelete(null)}
+        title={t("codeimg.deletePresetTitle")}
+        description={t("codeimg.deletePresetDesc", { name: presetToDelete?.name ?? "" })}
+      >
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+          <Button variant="secondary" onClick={() => setPresetToDelete(null)}>
+            {t("codeimg.cancel")}
+          </Button>
+          <Button
+            variant="danger"
+            onClick={handleConfirmDeletePreset}
+            loading={deletePresetMutation.isPending}
+          >
+            {t("codeimg.delete")}
           </Button>
         </div>
       </Modal>

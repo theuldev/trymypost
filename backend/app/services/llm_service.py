@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.factory import LLMFactory
 from app.models.app_settings import AppSettings
+from app.repositories.app_settings_repository import AppSettingsRepository
 
 
 class LLMService:
@@ -11,10 +12,7 @@ class LLMService:
     async def get_settings(
         db: AsyncSession,
     ) -> AppSettings:
-        settings = await db.get(
-            AppSettings,
-            1,
-        )
+        settings = await AppSettingsRepository.get(db)
 
         if not settings:
             raise ValueError(

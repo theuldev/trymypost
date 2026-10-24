@@ -17,6 +17,13 @@ class PostStatus(str, enum.Enum):
     CANCELLED = "cancelled"
 
 
+class EditorialStatus(str, enum.Enum):
+    DRAFT = "draft"
+    APPROVED = "approved"
+    SCHEDULED = "scheduled"
+    PUBLISHED = "published"
+
+
 class PostHistory(Base):
     __tablename__ = "posts"
 
@@ -47,7 +54,12 @@ class PostHistory(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     completed_at = Column(DateTime(timezone=True), nullable=True)
-    
+
+    editorial_status = Column(Enum(EditorialStatus), default=EditorialStatus.DRAFT, nullable=False)
+    scheduled_at = Column(DateTime(timezone=True), nullable=True)
+    published_at = Column(DateTime(timezone=True), nullable=True)
+    generated_image_url = Column(String(500), nullable=True)
+
     error_message = Column(Text, nullable=True)
 
     code_examples = relationship(
@@ -61,6 +73,8 @@ class PostHistory(Base):
         Index("ix_posts_created_at", "created_at"),
         Index("ix_posts_status", "status"),
         Index("ix_posts_favorito", "is_favorite"),
+        Index("ix_posts_editorial_status", "editorial_status"),
+        Index("ix_posts_scheduled_at", "scheduled_at"),
     )
 
 

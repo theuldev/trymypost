@@ -59,19 +59,19 @@ export function Modal({
   return (
     <Fragment>
       <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 animate-in"
+        className="fixed inset-0 bg-surface-950/40 backdrop-blur-[2px] z-50 modal-overlay"
         onClick={closeOnOverlayClick ? onClose : undefined}
         aria-hidden="true"
       />
       <div
         className={cn(
-          'fixed inset-0 z-50 flex items-center justify-center p-4 animate-in',
+          'fixed inset-0 z-50 flex items-center justify-center p-4',
           'pointer-events-none'
         )}
       >
         <div
           className={cn(
-            'w-full bg-white dark:bg-surface-900 rounded-xl shadow-xl pointer-events-auto',
+            'modal-content w-full bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-800 shadow-xl pointer-events-auto',
             sizeClasses[size]
           )}
           role="dialog"
@@ -80,15 +80,15 @@ export function Modal({
           aria-describedby={description ? 'modal-description' : undefined}
         >
           {(title || showCloseButton) && (
-            <div className="flex items-start justify-between p-5 border-b border-surface-200 dark:border-surface-700">
+            <div className="flex items-start justify-between border-b border-surface-200 px-4 py-3 dark:border-surface-800">
               <div>
                 {title && (
-                  <h2 id="modal-title" className="text-lg font-semibold text-surface-900 dark:text-surface-50">
+                  <h2 id="modal-title" className="text-sm font-semibold text-surface-900 dark:text-surface-50">
                     {title}
                   </h2>
                 )}
                 {description && (
-                  <p id="modal-description" className="mt-1 text-sm text-surface-500 dark:text-surface-400">
+                  <p id="modal-description" className="mt-0.5 text-[11px] text-surface-500 dark:text-surface-400">
                     {description}
                   </p>
                 )}
@@ -96,15 +96,15 @@ export function Modal({
               {showCloseButton && (
                 <button
                   onClick={onClose}
-                  className="p-1 rounded-lg text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
+                  className="rounded-md p-1 text-surface-400 transition-colors hover:bg-surface-100 hover:text-surface-600 dark:hover:bg-surface-800 dark:hover:text-surface-300"
                   aria-label="Fechar"
                 >
-                  <X className="h-5 w-5" />
+                  <X className="h-3.5 w-3.5" />
                 </button>
               )}
             </div>
           )}
-          <div className="p-5">
+          <div className="p-4">
             {children}
           </div>
         </div>

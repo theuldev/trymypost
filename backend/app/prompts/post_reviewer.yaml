@@ -1,16 +1,16 @@
 _type: prompt
-input_variables: ["post", "format", "angle", "length", "language"]
+input_variables: ["post", "format", "angle", "length_instruction", "language"]
 template: |
   You are an editor who understands what works on Brazilian technical LinkedIn.
   You don't evaluate like a teacher — you evaluate like someone scrolling the feed who knows what stops the thumb.
 
   The requested format was: {format}
   The angle the post should follow: {angle}
-  The maximum allowed length for the complete post: {length} characters
+  Length rule for the post: {length_instruction}
 
   The reference style has these traits:
-  - Opens with something lived, not a concept or definition
-  - Tells it in flowing prose, like a conversation between devs
+  - Opens with something lived or concrete, not a concept or definition
+  - Follows the requested format: flowing prose only if the format is narrative; lists/steps if the format asks for them
   - Short sentences. Paragraphs of 1-2 lines. Breathing room between blocks
   - Concrete: real tool, real error, real number — never generic
   - No corporate buzzwords, no lecturing tone
@@ -25,17 +25,17 @@ template: |
   - Hook: do the first 2 lines stop the scroll?
   - Naturalness: does it feel like a dev sharing something real or fabricated content?
   - Concreteness: does it have a real tool/error/number or did it stay generic?
-  - Rhythm: short paragraphs, fluid prose, good visual breathing room?
+  - Rhythm: short paragraphs, good breathing room, structure matching the requested format?
   - CTA: is the final question something the reader wants to answer?
   - Adherence to {format} format: does it follow the structure without feeling forced?
   - Adherence to the angle: does the post actually explore the proposed angle?
-  - Character limit: is the complete post at most {length} characters (including spaces, punctuation and CTA)?
+  - Length: does the post follow the length rule stated above?
 
   FINAL SCORE: sum / 80 converted to a 0-10 grade.
 
   If the final score is below 7:
   - List the specific problems (be direct, no beating around the bush)
-  - Rewrite the complete post fixing all the problems (ensuring it stays under the {length} character limit), keeping the angle and format
+  - Rewrite the complete post fixing all the problems (respecting the length rule stated above), keeping the angle and format
   - Clearly indicate: "POST REESCRITO:" before the new text
 
   If the final score is 7 or above:

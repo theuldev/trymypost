@@ -18,9 +18,38 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+async def connect_rabbitmq_with_retry(
+    url: str,
+    attempts: int = 30,
+    delay: float = 3.0,
+):
+    """Conecta ao RabbitMQ aguardando ele ficar pronto.
+
+    O healthcheck do RabbitMQ (rabbitmq-diagnostics ping) responde antes do
+    broker aceitar conexões AMQP, então a conexão inicial pode falhar no
+    startup. O `connect_robust` sozinho não retenta a conexão INICIAL —
+    por isso o loop abaixo.
+    """
+    for attempt in range(1, attempts + 1):
+        try:
+            return await aio_pika.connect_robust(url)
+        except Exception as exc:
+            if attempt >= attempts:
+                raise
+            logger.warning(
+                "RabbitMQ ainda não está pronto (%s). Tentativa %d/%d — nova tentativa em %.0fs.",
+                exc,
+                attempt,
+                attempts,
+                delay,
+            )
+            await asyncio.sleep(delay)
+    raise RuntimeError("unreachable")
+
+
 async def main() -> None:
     settings = get_settings()
-    connection = await aio_pika.connect_robust(settings.rabbitmq_url)
+    connection = await connect_rabbitmq_with_retry(settings.rabbitmq_url)
 
     try:
         channel = await connection.channel()
@@ -46,7 +75,6 @@ async def main() -> None:
                         logger.info(f"Task {task_id} completed")
                     except Exception as exc:
                         logger.error(f"Error processing message: {exc}", exc_info=True)
-                        # Message will be requeued since we don't ack on error
     finally:
         await connection.close()
 

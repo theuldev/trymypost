@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1'
+export const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1'
 
 class ApiClient {
   private client: AxiosInstance
@@ -43,7 +43,12 @@ class ApiClient {
   }
 
   async post<T>(url: string, data?: any) {
-    const response = await this.client.post<T>(url, data)
+    const headers =
+      data instanceof FormData
+        ? // Deixa o browser definir o boundary do multipart
+          { 'Content-Type': undefined as unknown as undefined }
+        : undefined
+    const response = await this.client.post<T>(url, data, headers ? { headers } : undefined)
     return response.data
   }
 
@@ -64,3 +69,11 @@ class ApiClient {
 }
 
 export const api = new ApiClient()
+
+/** Converte URLs relativas do backend (/media/...) em absolutas. */
+export function mediaUrl(path?: string | null): string | null {
+  if (!path) return null
+  if (path.startsWith('http')) return path
+  const base = API_BASE_URL.replace(/\/api\/v1\/?$/, '')
+  return `${base}${path}`
+}

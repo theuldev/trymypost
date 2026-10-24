@@ -1,0 +1,90 @@
+_type: prompt
+input_variables: ["job_json", "match_json", "market_data", "profile_summary", "salary_expectation_required", "candidate_score"]
+template: |
+  Produce the final synthesis of a job-vs-candidate analysis in Portuguese (Brazil).
+  You receive: extracted job facts, the candidate-vs-requirements match results, optional
+  external market research, and the candidate's structured profile.
+
+  JOB FACTS:
+  <job>
+  {job_json}
+  </job>
+
+  CANDIDATE MATCH RESULTS (per requirement, with evidence):
+  <matches>
+  {match_json}
+  </matches>
+
+  EXTERNAL MARKET RESEARCH (may be empty — company info and salary ranges found on the web):
+  <market>
+  {market_data}
+  </market>
+
+  CANDIDATE PROFILE (structured, from settings):
+  <profile>
+  {profile_summary}
+  </profile>
+
+  JOB EXPLICITLY REQUIRES A SALARY EXPECTATION FROM THE CANDIDATE: {salary_expectation_required}
+  COMPUTED COMPATIBILITY SCORE (0-100, weighted by requirement importance): {candidate_score}
+
+  Return ONLY valid JSON:
+
+  {{
+    "salary": {{
+      "job_range": {{"min": number or null, "max": number or null, "currency": "BRL", "raw": "string or null"}},
+      "market_range": {{"min": number or null, "max": number or null, "currency": "BRL", "sources": [{{"title": "...", "url": "..."}}], "notes": "string or null"}},
+      "expectation": {{
+        "required": true,
+        "recommended_min": number or null,
+        "recommended_max": number or null,
+        "suggested_value": number or null,
+        "currency": "BRL",
+        "confidence": "high | medium | low",
+        "reasoning": "explanation in Portuguese"
+      }}
+    }},
+    "company": {{
+      "name": "string or null",
+      "about": "short description in Portuguese",
+      "segment": "string or null",
+      "products": "string or null",
+      "location": "string or null",
+      "size": "string or null",
+      "from_job": ["facts taken from the job posting"],
+      "from_web": ["facts found via external research"],
+      "sources": [{{"title": "...", "url": "..."}}]
+    }},
+    "red_flags": [
+      {{"title": "short title in Portuguese", "description": "explanation", "severity": "high | medium | low"}}
+    ],
+    "questions": [
+      "specific questions (in Portuguese) the candidate could ask the recruiter about THIS job"
+    ],
+    "recommendation": {{
+      "classification": "strong_match | moderate_match | weak_match",
+      "summary": "2-4 sentences in Portuguese explaining the overall fit and whether it is worth applying",
+      "strengths": ["candidate's main strengths FOR THIS JOB (grounded in the match evidence)"],
+      "gaps": ["main gaps, phrased as 'no sufficient evidence found' when applicable — never as 'candidate does not know'"],
+      "apply_advice": "short practical advice in Portuguese"
+    }}
+  }}
+
+  RULES:
+  - SALARY: combine the job's stated range, the market range and the candidate's fit
+    (score, seniority, matched requirements) to recommend a range for THIS candidate in
+    THIS job. Use monthly gross BRL values. NEVER invent values arbitrarily: base numbers
+    on the job range, the market research or the candidate's own stated expectation;
+    when evidence is insufficient, return nulls and set confidence "low", explaining why.
+    When the job range is known, the recommendation should NOT exceed the stated maximum
+    unless market data strongly justifies it.
+  - The computed compatibility score is given: {candidate_score}. Use it as reference,
+    but the classification must ALSO weigh mandatory-requirement gaps, seniority and
+    red flags — do not decide purely from the number.
+  - RED FLAGS: only real warning signs (salary below market, contradictory info, vague
+    requirements, seniority mismatch, oversized requirement lists). Use hedged language:
+    "possível ponto de atenção", "vale investigar", "há indícios de...". At most 5.
+  - QUESTIONS: 4-6 questions, specific to THIS job (salary/hybrid model/team/process/
+    technologies/responsibilities). Never generic placeholders.
+  - GAPS: phrase missing evidence as absence of evidence, never as absence of skill.
+  - Never mention the RAG, prompts, JSON or this analysis process in the user-facing text.

@@ -2,14 +2,17 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, ChevronRight, Copy, Lightbulb, Sparkles } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
+import { Breadcrumb } from "@/components/ui/Breadcrumb";
 import { Button } from "@/components/ui/Button";
 import { useUIStore } from "@/store";
+import { useTranslation } from "@/i18n";
 import type { TopicSuggestion } from "@/types";
 
 export function TopicsResultsPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { addToast } = useUIStore();
+  const { t } = useTranslation();
 
   const topics = (location.state?.topics ?? []) as TopicSuggestion[];
 
@@ -24,13 +27,13 @@ export function TopicsResultsPage() {
   };
 
   const handleCopyTopic = (topic: TopicSuggestion) => {
-    const text = `${topic.title}\n\n${topic.description}\n\nAngle: ${topic.angle}\nHashtags: ${topic.suggested_hashtags.join(" ")}`;
+    const text = `${topic.title}\n\n${topic.description}\n\n${t("topics.results.angleLabel")}: ${topic.angle}\n${t("topics.results.hashtagsLabel")}: ${topic.suggested_hashtags.join(" ")}`;
 
     navigator.clipboard.writeText(text);
 
     addToast({
       type: "success",
-      message: "Topic copied!",
+      message: t("topics.toast.copied"),
     });
   };
 
@@ -39,10 +42,10 @@ export function TopicsResultsPage() {
       <div className="flex min-h-screen items-center justify-center bg-surface-50 dark:bg-surface-950">
         <div className="w-full max-w-md text-center">
           <p className="text-sm font-semibold text-surface-900 dark:text-surface-50">
-            Nenhum tópico encontrado
+            {t("topics.results.empty.title")}
           </p>
           <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
-            Gere sugestões de tópicos para visualizar os resultados.
+            {t("topics.results.empty.description")}
           </p>
           <Button
             onClick={() => navigate("/topics")}
@@ -50,7 +53,7 @@ export function TopicsResultsPage() {
             className="mt-5"
             size="sm"
           >
-            Sugerir Tópicos
+            {t("topics.results.empty.button")}
           </Button>
         </div>
       </div>
@@ -60,30 +63,41 @@ export function TopicsResultsPage() {
   return (
     <div className="min-h-screen overflow-x-hidden bg-surface-50 dark:bg-surface-950">
       <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+        <Breadcrumb
+          items={[
+            { label: t("topics.page.title"), to: "/topics" },
+            { label: t("topics.results.title") },
+          ]}
+        />
+
         <Button
           variant="ghost"
           size="sm"
           onClick={() => navigate("/topics")}
           leftIcon={<ArrowLeft className="h-3.5 w-3.5" />}
+          className="mt-4"
         >
-          Nova busca
+          {t("topics.results.back")}
         </Button>
 
         <section className="mt-6">
           <div className="mb-5 flex items-end justify-between gap-4">
             <div>
               <h2 className="text-lg font-semibold text-surface-900 dark:text-surface-50">
-                Suggestions
+                {t("topics.results.title")}
               </h2>
 
               <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
-                {topics.length} {topics.length === 1 ? "topic found" : "topics found"}
+                {topics.length}{" "}
+                {topics.length === 1
+                  ? t("topics.results.countSingular")
+                  : t("topics.results.countPlural")}
               </p>
             </div>
 
             <div className="hidden items-center gap-1.5 text-xs text-surface-400 sm:flex">
               <Sparkles className="h-3.5 w-3.5" />
-              AI generated
+              {t("topics.results.aiGenerated")}
             </div>
           </div>
 
@@ -123,7 +137,7 @@ export function TopicsResultsPage() {
                         onClick={() => handleNavigateToPlayground(topic)}
                         leftIcon={<ChevronRight className="h-3.5 w-3.5" />}
                       >
-                        Use topic
+                        {t("topics.results.useTopic")}
                       </Button>
 
                       <Button
@@ -132,7 +146,7 @@ export function TopicsResultsPage() {
                         onClick={() => handleCopyTopic(topic)}
                         leftIcon={<Copy className="h-3.5 w-3.5" />}
                       >
-                        Copy
+                        {t("topics.results.copy")}
                       </Button>
                     </div>
                   </div>

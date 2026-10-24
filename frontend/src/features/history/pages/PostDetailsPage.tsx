@@ -3,12 +3,15 @@ import {
   AlertTriangle,
   CheckCircle,
   Check,
+  ChevronDown,
   Code2,
   Copy,
+  DollarSign,
   Download,
   Edit3,
   FileText,
   Heart,
+  History,
   Image as ImageIcon,
   Palette,
   RefreshCw,
@@ -18,13 +21,20 @@ import {
   Wand2,
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { Breadcrumb } from "@/components/ui/Breadcrumb";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
 import { postsApi } from "@/services/posts";
 import { useUIStore } from "@/store";
 import { cn } from "@/utils/cn";
-import { CodeExample } from "@/types/common";
+import { CodeExample } from "@/types";
+import { PostEdit } from "@/types/index";
+import { ExportCodeImageModal } from "../components/ExportCodeImageModal";
+import { UsagePanel } from "../components/UsagePanel";
+import { mediaUrl } from "@/services/api";
+import { useTranslation } from "@/i18n";
 
 type DetailTab =
   | "posts"
@@ -32,7 +42,9 @@ type DetailTab =
   | "hashtags"
   | "hooks"
   | "review"
-  | "visual";
+  | "visual"
+  | "versions"
+  | "cost";
 
 export function PostDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -45,6 +57,7 @@ export function PostDetailsPage() {
 }
 
 function DetailView({ id }: { id: string }) {
+  const { t, language } = useTranslation();
   const navigate = useNavigate();
   const { addToast } = useUIStore();
   const queryClient = useQueryClient();
@@ -53,6 +66,7 @@ function DetailView({ id }: { id: string }) {
   const [selectedVariationIndex, setSelectedVariationIndex] =
     useState<number>(0);
   const [copied, setCopied] = useState<boolean>(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false);
 
   const {
     data: post,
@@ -65,6 +79,17 @@ function DetailView({ id }: { id: string }) {
     enabled: Boolean(id),
   });
 
+  const { data: edits = [] } = useQuery({
+    queryKey: ["post-edits", id],
+    queryFn: () => postsApi.getEdits(id),
+    enabled: Boolean(id),
+  });
+
+  const variationEdits = useMemo(
+    () => edits.filter((edit) => edit.post_index === selectedVariationIndex),
+    [edits, selectedVariationIndex]
+  );
+
   const deleteMutation = useMutation({
     mutationFn: () => postsApi.delete(id),
 
@@ -75,7 +100,7 @@ function DetailView({ id }: { id: string }) {
 
       addToast({
         type: "success",
-        message: "Post excluído com sucesso",
+        message: t("hist.toast.postDeleted"),
       });
 
       navigate("/history");
@@ -84,7 +109,23 @@ function DetailView({ id }: { id: string }) {
     onError: () => {
       addToast({
         type: "error",
-        message: "Não foi possível excluir o post",
+        message: t("hist.toast.deletePostError"),
+      });
+    },
+  });
+
+  const imageMutation = useMutation({
+    mutationFn: () => postsApi.generateImage(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["post", id] });
+      queryClient.invalidateQueries({ queryKey: ["post-usage", id] });
+      queryClient.invalidateQueries({ queryKey: ["history"] });
+      addToast({ type: "success", message: t("hist.image.success") });
+    },
+    onError: (error: any) => {
+      addToast({
+        type: "error",
+        message: error?.response?.data?.detail || t("hist.image.error"),
       });
     },
   });
@@ -108,16 +149,16 @@ function DetailView({ id }: { id: string }) {
     onError: () => {
       addToast({
         type: "error",
-        message: "Erro ao atualizar favorito",
+        message: t("hist.toast.favoriteError"),
       });
     },
   });
 
   const handleDelete = () => {
-    if (!window.confirm("Tem certeza que deseja excluir esta geração?")) {
-      return;
-    }
+    setShowDeleteConfirm(true);
+  };
 
+  const confirmDelete = () => {
     deleteMutation.mutate();
   };
 
@@ -127,7 +168,7 @@ function DetailView({ id }: { id: string }) {
 
   const handleCopy = async (
     text: string,
-    message = "Copiado para a área de transferência!"
+    message = t("hist.toast.copied")
   ) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -145,7 +186,7 @@ function DetailView({ id }: { id: string }) {
     } catch {
       addToast({
         type: "error",
-        message: "Erro ao copiar",
+        message: t("hist.toast.copyError"),
       });
     }
   };
@@ -156,12 +197,12 @@ function DetailView({ id }: { id: string }) {
 
       addToast({
         type: "success",
-        message: "Link copiado!",
+        message: t("hist.toast.linkCopied"),
       });
     } catch {
       addToast({
         type: "error",
-        message: "Erro ao copiar link",
+        message: t("hist.toast.copyLinkError"),
       });
     }
   };
@@ -176,7 +217,7 @@ function DetailView({ id }: { id: string }) {
     const content = variations
       .map(
         (variation, index) =>
-          `Variation ${index + 1}\n\n${variation.content}`
+          `${t("hist.variation", { n: index + 1 })}\n\n${variation.content}`
       )
       .join("\n\n------------------------------\n\n");
 
@@ -211,41 +252,57 @@ function DetailView({ id }: { id: string }) {
     const current = variations[selectedVariationIndex] ?? variations[0];
 
     const tabs = [
-      { key: "posts", label: "Posts Gerados", icon: FileText, count: 1 },
+      { key: "posts", label: t("hist.tabs.posts"), icon: FileText, count: 1 },
       {
         key: "code",
-        label: "Código",
+        label: t("hist.tabs.code"),
         icon: Code2,
         count: current?.code_examples?.length ?? 0,
       },
       {
         key: "hashtags",
-        label: "Hashtags",
+        label: t("hist.tabs.hashtags"),
         icon: Tag,
         count: current?.hashtags?.length ?? 0,
       },
       {
         key: "hooks",
-        label: "Hooks",
+        label: t("hist.tabs.hooks"),
         icon: Wand2,
         count: current?.hooks?.length ?? 0,
       },
       {
         key: "review",
-        label: "Análise",
+        label: t("hist.tabs.review"),
         icon: CheckCircle,
         count: current?.review ? 1 : 0,
       },
       {
         key: "visual",
-        label: "Sugestão Visual",
+        label: t("hist.tabs.visual"),
         icon: Palette,
         count: current?.visual_suggestion ? 1 : 0,
       },
+      {
+        key: "versions",
+        label: t("hist.tabs.versions"),
+        icon: History,
+        count: variationEdits.length,
+        always: true,
+      },
+      {
+        key: "cost",
+        label: t("hist.tabs.cost"),
+        icon: DollarSign,
+        count: 1,
+        always: true,
+      },
     ];
 
-    return tabs.filter((tab) => tab.count > 0);
-  }, [post, selectedVariationIndex]);
+    return tabs.filter(
+      (tab) => ("always" in tab && tab.always) || tab.count > 0
+    );
+  }, [post, selectedVariationIndex, variationEdits, t]);
 
   if (isLoading) {
     return (
@@ -268,11 +325,11 @@ function DetailView({ id }: { id: string }) {
             </div>
 
             <h1 className="text-sm font-semibold text-surface-900 dark:text-surface-50">
-              Não foi possível carregar o post
+              {t("hist.error.title")}
             </h1>
 
             <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
-              Ocorreu um erro ao buscar os dados deste post.
+              {t("hist.error.description")}
             </p>
 
             <div className="mt-5 flex justify-center gap-2">
@@ -282,7 +339,7 @@ function DetailView({ id }: { id: string }) {
                 onClick={() => refetch()}
                 leftIcon={<RefreshCw className="h-3.5 w-3.5" />}
               >
-                Tentar novamente
+                {t("hist.error.retry")}
               </Button>
 
               <Button
@@ -290,7 +347,7 @@ function DetailView({ id }: { id: string }) {
                 size="sm"
                 onClick={() => navigate("/history")}
               >
-                Voltar ao histórico
+                {t("hist.error.back")}
               </Button>
             </div>
           </div>
@@ -316,12 +373,6 @@ function DetailView({ id }: { id: string }) {
         <header className="border-b border-surface-200 pb-5 dark:border-surface-800">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <Link
-                to="/history"
-                className="mb-3 inline-flex items-center text-xs text-surface-400 transition-colors hover:text-surface-700 dark:hover:text-surface-200"
-              >
-                ← Voltar ao histórico
-              </Link>
 
               <div className="mb-2 flex flex-wrap items-center gap-2">
                 <Badge
@@ -344,7 +395,7 @@ function DetailView({ id }: { id: string }) {
                     size="sm"
                     className="text-[10px]"
                   >
-                    Editada
+                    {t("hist.editedBadge")}
                   </Badge>
                 )}
 
@@ -379,14 +430,15 @@ function DetailView({ id }: { id: string }) {
                 variant="ghost"
                 size="sm"
                 onClick={() =>
-                  navigate(`/editor/${post.id}`, {
+                  navigate(`/tools/editor/${post.id}`, {
                     state: {
                       initialContent: currentVariation?.content,
                       initialTopic: post.topic,
+                      initialPostIndex: selectedVariationIndex,
                     },
                   })
                 }
-                title="Editar no Editor"
+                title={t("hist.actions.editInEditor")}
               >
                 <Edit3 className="h-3.5 w-3.5" />
               </Button>
@@ -395,7 +447,7 @@ function DetailView({ id }: { id: string }) {
                 variant="ghost"
                 size="sm"
                 onClick={handleShare}
-                title="Compartilhar"
+                title={t("hist.actions.share")}
               >
                 <Share2 className="h-3.5 w-3.5" />
               </Button>
@@ -404,7 +456,7 @@ function DetailView({ id }: { id: string }) {
                 variant="ghost"
                 size="sm"
                 onClick={handleDownload}
-                title="Baixar TXT"
+                title={t("hist.actions.downloadTxt")}
               >
                 <Download className="h-3.5 w-3.5" />
               </Button>
@@ -415,8 +467,8 @@ function DetailView({ id }: { id: string }) {
                 onClick={handleFavorite}
                 title={
                   post.is_favorite
-                    ? "Remover favorito"
-                    : "Favoritar"
+                    ? t("hist.actions.removeFavorite")
+                    : t("hist.actions.favorite")
                 }
               >
                 <Heart
@@ -433,7 +485,7 @@ function DetailView({ id }: { id: string }) {
                 variant="ghost"
                 size="sm"
                 onClick={handleDelete}
-                title="Excluir"
+                title={t("hist.actions.delete")}
               >
                 <Trash2 className="h-3.5 w-3.5 text-red-500" />
               </Button>
@@ -456,14 +508,14 @@ function DetailView({ id }: { id: string }) {
                       : "text-surface-500 hover:bg-surface-100 dark:hover:bg-surface-800"
                   )}
                 >
-                  Variação {index + 1}
+                  {t("hist.variation", { n: index + 1 })}
                 </button>
               ))}
             </div>
           )}
 
           <div className="mb-6 border-b border-surface-200 dark:border-surface-800">
-            <div className="flex min-w-max gap-1">
+            <div className="flex flex-wrap gap-1">
               {tabsConfig.map((tab) => {
                 const Icon = tab.icon;
 
@@ -529,18 +581,19 @@ function DetailView({ id }: { id: string }) {
                         )
                       }
                     >
-                      {copied ? "Copiado" : "Copiar Texto"}
+                      {copied ? t("hist.copied") : t("hist.copyText")}
                     </Button>
 
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() =>
-                        navigate(`/editor/${post.id}`, {
+                        navigate(`/tools/editor/${post.id}`, {
                           state: {
                             initialContent:
                               currentVariation.content,
                             initialTopic: post.topic,
+                            initialPostIndex: selectedVariationIndex,
                           },
                         })
                       }
@@ -548,13 +601,13 @@ function DetailView({ id }: { id: string }) {
                         <Edit3 className="h-3.5 w-3.5" />
                       }
                     >
-                      Editar no Editor
+                      {t("hist.actions.editInEditor")}
                     </Button>
                   </div>
                 </div>
               ) : (
                 <p className="py-4 text-xs text-surface-500">
-                  Nenhum post gerado disponível.
+                  {t("hist.postsEmpty")}
                 </p>
               )}
             </div>
@@ -571,7 +624,7 @@ function DetailView({ id }: { id: string }) {
                         example.code
 
                       const title =
-                        `Exemplo de código ${index + 1}`;
+                        t("hist.codeExampleTitle", { n: index + 1 });
 
                       const language =
                         example.language;
@@ -596,24 +649,11 @@ function DetailView({ id }: { id: string }) {
                               </span>
                             </div>
 
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() =>
-                                navigate(`/code-image`, {
-                                  state: {
-                                    initialCode: code,
-                                    initialLanguage: language,
-                                    initialTitle: title,
-                                  },
-                                })
-                              }
-                              leftIcon={
-                                <ImageIcon className="h-3.5 w-3.5" />
-                              }
-                            >
-                              Criar imagem de código
-                            </Button>
+                            <ExportCodeImageModal
+                              code={code}
+                              language={language}
+                              title={title}
+                            />
                           </div>
 
                           {example.language && (
@@ -641,11 +681,11 @@ function DetailView({ id }: { id: string }) {
                   </div>
 
                   <p className="text-xs font-medium text-surface-700 dark:text-surface-300">
-                    Nenhum exemplo de código disponível
+                    {t("hist.codeEmpty.title")}
                   </p>
 
                   <p className="mt-1 text-[11px] text-surface-400">
-                    Este post não possui exemplos de código.
+                    {t("hist.codeEmpty.description")}
                   </p>
                 </div>
               )}
@@ -691,7 +731,7 @@ function DetailView({ id }: { id: string }) {
                           onClick={() =>
                             handleCopy(
                               h.tag,
-                              `Hashtag #${h.tag} copiada!`
+                              t("hist.hashtagCopied", { tag: h.tag })
                             )
                           }
                         >
@@ -703,7 +743,7 @@ function DetailView({ id }: { id: string }) {
                 </div>
               ) : (
                 <p className="py-4 text-xs text-surface-500">
-                  Nenhuma hashtag gerada.
+                  {t("hist.hashtagsEmpty")}
                 </p>
               )}
             </div>
@@ -741,7 +781,7 @@ function DetailView({ id }: { id: string }) {
                         {hook.why_it_works && (
                           <p className="mt-1.5 text-[11px] leading-relaxed text-surface-400">
                             <span className="font-medium text-surface-600 dark:text-surface-300">
-                              Por que funciona:
+                              {t("hist.whyItWorks")}
                             </span>{" "}
                             {hook.why_it_works}
                           </p>
@@ -751,12 +791,12 @@ function DetailView({ id }: { id: string }) {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() =>
-                          handleCopy(
-                            hook.text,
-                            "Hook copiado!"
-                          )
-                        }
+                          onClick={() =>
+                            handleCopy(
+                              hook.text,
+                              t("hist.toast.hookCopied")
+                            )
+                          }
                       >
                         <Copy className="h-3.5 w-3.5" />
                       </Button>
@@ -765,7 +805,7 @@ function DetailView({ id }: { id: string }) {
                 </div>
               ) : (
                 <p className="py-4 text-xs text-surface-500">
-                  Nenhum hook gerado.
+                  {t("hist.hooksEmpty")}
                 </p>
               )}
             </div>
@@ -779,7 +819,7 @@ function DetailView({ id }: { id: string }) {
                   {variationReview.score !== undefined && (
                     <div className="flex items-center justify-between border-b border-surface-200 pb-3 dark:border-surface-800">
                       <span className="text-xs font-medium text-surface-700 dark:text-surface-300">
-                        Nota de Análise
+                        {t("hist.reviewScore")}
                       </span>
 
                       <span className="text-sm font-semibold text-surface-900 dark:text-surface-50">
@@ -794,7 +834,7 @@ function DetailView({ id }: { id: string }) {
                         <div>
                           <h4 className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-surface-900 dark:text-surface-50">
                             <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
-                            Pontos Fortes
+                            {t("hist.strengths")}
                           </h4>
 
                           <ul className="space-y-1 text-xs text-surface-600 dark:text-surface-400">
@@ -821,7 +861,7 @@ function DetailView({ id }: { id: string }) {
                         <div>
                           <h4 className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-surface-900 dark:text-surface-50">
                             <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
-                            Sugestões de Melhoria
+                            {t("hist.improvements")}
                           </h4>
 
                           <ul className="space-y-1 text-xs text-surface-600 dark:text-surface-400">
@@ -846,7 +886,7 @@ function DetailView({ id }: { id: string }) {
                 </div>
               ) : (
                 <p className="py-4 text-xs text-surface-500">
-                  Nenhuma análise disponível.
+                  {t("hist.reviewEmpty")}
                 </p>
               )}
             </div>
@@ -854,7 +894,45 @@ function DetailView({ id }: { id: string }) {
 
           {/* VISUAL */}
           {activeTab === "visual" && (
-            <div className="space-y-3">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className="flex items-center gap-1.5 text-xs font-semibold text-surface-900 dark:text-surface-50">
+                    <ImageIcon className="h-3.5 w-3.5 text-primary-600" />
+                    {t("hist.image.title")}
+                  </h4>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => imageMutation.mutate()}
+                    loading={imageMutation.isPending}
+                    leftIcon={<Wand2 className="h-3.5 w-3.5" />}
+                  >
+                    {post.generated_image_url
+                      ? t("hist.image.regenerate")
+                      : t("hist.image.generate")}
+                  </Button>
+                </div>
+
+                {post.generated_image_url ? (
+                  <a
+                    href={mediaUrl(post.generated_image_url) ?? undefined}
+                    target="_blank"
+                    rel="noreferrer"
+                    title={t("hist.image.openFull")}
+                  >
+                    <img
+                      src={mediaUrl(post.generated_image_url) ?? undefined}
+                      alt={post.topic}
+                      className="max-h-80 w-full rounded-lg border border-surface-200 object-cover dark:border-surface-800"
+                    />
+                  </a>
+                ) : (
+                  <p className="text-[11px] text-surface-400">
+                    {t("hist.image.generateHint")}
+                  </p>
+                )}
+              </div>
               {variationVisual ? (
                 <div className="space-y-3">
                   <p className="text-xs leading-relaxed text-surface-700 dark:text-surface-300">
@@ -886,12 +964,169 @@ function DetailView({ id }: { id: string }) {
                 </div>
               ) : (
                 <p className="py-4 text-xs text-surface-500">
-                  Nenhuma sugestão visual disponível.
+                  {t("hist.visualEmpty")}
                 </p>
               )}
             </div>
           )}
+
+          {/* VERSIONS */}
+          {activeTab === "versions" && (
+            <div className="space-y-4">
+              {variationEdits.length > 0 ? (
+                <div className="divide-y divide-surface-200 dark:divide-surface-800">
+                  {variationEdits.map((edit, index) => (
+                    <EditVersionItem
+                      key={edit.id}
+                      edit={edit}
+                      versionNumber={variationEdits.length - index}
+                      postId={post.id}
+                      topic={post.topic}
+                      onCopy={(content) =>
+                        handleCopy(content, t("hist.toast.versionCopied"))
+                      }
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="py-8 text-center">
+                  <div className="mx-auto mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-surface-100 dark:bg-surface-900">
+                    <History className="h-4 w-4 text-surface-400" />
+                  </div>
+
+                  <p className="text-xs font-medium text-surface-700 dark:text-surface-300">
+                    {t("hist.versionsEmpty.title")}
+                  </p>
+
+                  <p className="mt-1 text-[11px] text-surface-400">
+                    {t("hist.versionsEmpty.description")}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* COST */}
+          {activeTab === "cost" && <UsagePanel postId={post.id} />}
         </section>
+
+        <Modal
+          isOpen={showDeleteConfirm}
+          onClose={() => setShowDeleteConfirm(false)}
+          title={t("hist.deleteModal.title")}
+          description={t("hist.deleteModal.description")}
+        >
+          <p className="mb-6 text-xs text-surface-600 dark:text-surface-400">
+            {t("hist.deleteModal.confirm")}
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)}>
+              {t("hist.deleteModal.cancel")}
+            </Button>
+            <Button
+              variant="danger"
+              onClick={confirmDelete}
+              loading={deleteMutation.isPending}
+            >
+              {t("hist.deleteModal.delete")}
+            </Button>
+          </div>
+        </Modal>
+      </div>
+    </div>
+  );
+}
+
+function EditVersionItem({
+  edit,
+  versionNumber,
+  postId,
+  topic,
+  onCopy,
+}: {
+  edit: PostEdit;
+  versionNumber: number;
+  postId: string;
+  topic?: string;
+  onCopy: (content: string) => void;
+}) {
+  const { t, language } = useTranslation();
+  const navigate = useNavigate();
+  const [expanded, setExpanded] = useState<boolean>(false);
+
+  const createdAtLabel = new Date(edit.created_at).toLocaleString(language, {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  return (
+    <div className="py-4 first:pt-0 last:pb-0">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <Badge variant="primary" size="sm" className="text-[10px]">
+            {t("hist.version", { n: versionNumber })}
+          </Badge>
+
+          <span className="text-[11px] text-surface-400">
+            {createdAtLabel}
+          </span>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setExpanded((prev) => !prev)}
+            title={expanded ? t("hist.versionActions.collapse") : t("hist.versionActions.viewFull")}
+          >
+            <ChevronDown
+              className={cn(
+                "h-3.5 w-3.5 transition-transform",
+                expanded && "rotate-180"
+              )}
+            />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onCopy(edit.content)}
+            title={t("hist.versionActions.copy")}
+          >
+            <Copy className="h-3.5 w-3.5" />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() =>
+              navigate(`/tools/editor/${postId}`, {
+                state: {
+                  initialContent: edit.content,
+                  initialTopic: topic,
+                  initialPostIndex: edit.post_index,
+                },
+              })
+            }
+            title={t("hist.versionActions.openInEditor")}
+          >
+            <Edit3 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </div>
+
+      <div className="mt-2 border-l-2 border-primary-500 py-1 pl-4">
+        <p
+          className={cn(
+            "whitespace-pre-wrap text-xs leading-relaxed text-surface-800 dark:text-surface-200",
+            !expanded && "line-clamp-3"
+          )}
+        >
+          {edit.content}
+        </p>
       </div>
     </div>
   );

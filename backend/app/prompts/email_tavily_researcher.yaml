@@ -1,0 +1,27 @@
+_type: prompt
+input_variables: ["job_description", "missing_fields", "extracted_info"]
+template: |
+  Research missing information about this job posting using web search.
+  Focus on finding: {missing_fields}
+  
+  Current extracted info: {extracted_info}
+  
+  Original job description: {job_description}
+  
+  Search for:
+  1. Original job posting page
+  2. Company careers page
+  3. Similar postings from same company
+  4. Recruiter contact info (if name known)
+  
+  Return ONLY valid JSON with any newly found information:
+  {{
+    "job_title": "string or null",
+    "company_name": "string or null",
+    "recruiter_name": "string or null", 
+    "recruiter_email": "string or null",
+    "salary_expectation_required": boolean or null
+  }}
+  
+  IMPORTANT: Only return recruiter_email if explicitly found on official sources.
+  Never synthesize emails.

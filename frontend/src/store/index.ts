@@ -80,6 +80,12 @@ export const useUIStore = create<UIState>()(
   )
 )
 
+interface PlaygroundDraft {
+  mode: 'structured' | 'description'
+  formData: Record<string, any>
+  descData: Record<string, any>
+}
+
 interface GenerationState {
   currentTaskId: string | null
   currentStep: string
@@ -88,11 +94,13 @@ interface GenerationState {
   result: Record<string, any> | null
   style: string
   formData: Record<string, any> | null
-  
+  draft: PlaygroundDraft | null
+
   setGeneration: (taskId: string) => void
   setResult: (result: Record<string, any> | null) => void
   setStyle: (style: string) => void
   saveFormData: (formData: Record<string, any>) => void
+  saveDraft: (draft: PlaygroundDraft) => void
   clearGeneration: () => void
   updateProgress: (step: string, progress: number) => void
 }
@@ -105,6 +113,7 @@ export const useGenerationStore = create<GenerationState>((set) => ({
   result: null,
   style: 'Technical',
   formData: null,
+  draft: null,
 
   setGeneration: (taskId) => set({
     currentTaskId: taskId,
@@ -120,6 +129,8 @@ export const useGenerationStore = create<GenerationState>((set) => ({
 
   saveFormData: (formData) => set({ formData }),
 
+  saveDraft: (draft) => set({ draft }),
+
   clearGeneration: () => set({
     currentTaskId: null,
     isGenerating: false,
@@ -131,6 +142,22 @@ export const useGenerationStore = create<GenerationState>((set) => ({
     currentStep: step,
     progress,
   }),
+}))
+
+interface TopicsFormDraft {
+  context: string
+  quantity: number
+  country: string
+}
+
+interface TopicsFormState {
+  draft: TopicsFormDraft | null
+  saveDraft: (draft: TopicsFormDraft) => void
+}
+
+export const useTopicsFormStore = create<TopicsFormState>((set) => ({
+  draft: null,
+  saveDraft: (draft) => set({ draft }),
 }))
 
 interface HistoryState {
@@ -156,3 +183,5 @@ export const useHistoryStore = create<HistoryState>()(
     }
   )
 )
+
+export { useEmailGenerationStore } from './emailStore'

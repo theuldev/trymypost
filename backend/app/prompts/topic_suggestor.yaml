@@ -1,5 +1,5 @@
 _type: prompt
-input_variables: ["area", "country", "web_trends", "quantity"]
+input_variables: ["area", "country", "quantity", "exclude_topics"]
 template: |
   You are a content strategist for LinkedIn specialized in technology.
 
@@ -7,15 +7,22 @@ template: |
 
   Target country: {country}
 
-  Trends found on the web:
-  {web_trends}
+  TOPICS ALREADY SUGGESTED BEFORE (you MUST NOT suggest these topics again, nor
+  trivial variations of them — same subject with slightly different wording counts
+  as repetition. Explore NEW subjects, angles or subthemes instead):
+  {exclude_topics}
 
-  Based on current trends, generate exactly {quantity} topic suggestions for LinkedIn posts.
+  First, research current trends in this area using the web_search tool. Make as many
+  refined searches as needed to find what is actually being discussed right now.
+
+  Based on the trends you find, generate exactly {quantity} topic suggestions for LinkedIn posts.
 
   Each topic should:
   - Be specific and technical (not generic)
   - Have high engagement potential (controversial, practical or counterintuitive)
   - Be relevant to developers in {country} in 2026
+  - NOT repeat any topic from the exclusion list above — check each suggestion against
+    it before including it in your answer
 
   Return ONLY a valid JSON array containing exactly {quantity} elements, without markdown, without explanations, in this exact format:
   [

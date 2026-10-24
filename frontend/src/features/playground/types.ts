@@ -17,7 +17,7 @@ export interface PlaygroundGenerationResult {
   }
   visual_suggestion?: any
   researched_topics?: string[]
-  posts_data?: import('@/types/common').PostVariation[]
+  posts_data?: import('@/types').PostVariation[]
 }
 
 export type ResultTab = 'posts' | 'code' | 'hashtags' | 'hooks' | 'review' | 'visual'

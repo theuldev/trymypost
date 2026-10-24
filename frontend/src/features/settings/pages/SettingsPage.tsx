@@ -4,7 +4,6 @@ import {
   Settings as SettingsIcon,
   Moon,
   Key,
-  Database,
   Info,
   Shield,
   Code2,
@@ -15,34 +14,37 @@ import {
   Eye,
   XCircle,
   AlertTriangle,
-  Download,
-  Trash2,
   Cpu,
   Globe,
   Save,
   Sliders,
+  User,
+  Linkedin,
+  Github,
+  Smartphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { Input, Select, Switch, Label, FileInput } from "@/components/ui";
-import { settingsApi } from "@/services/posts";
+import { Input, Select, Switch, Label, Textarea } from "@/components/ui";
+import { settingsApi, emailApi } from "@/services/posts";
 import { useUIStore } from "@/store";
+import { useTranslation } from "@/i18n";
 
 const PROVIDER_OPTIONS = [
   { value: "GOOGLE", label: "Google AI (Gemini)" },
   { value: "OPENAI", label: "OpenAI (GPT)" },
   { value: "ANTHROPIC", label: "Anthropic (Claude)" },
+  { value: "OPENROUTER", label: "OpenRouter" },
+  { value: "HUGGINGFACE", label: "HuggingFace" },
 ];
 
 const MODEL_OPTIONS: Record<string, { value: string; label: string }[]> = {
   GOOGLE: [
+    { value: "gemini-3.1-pro-preview", label: "Gemini 3.1 Pro (Avançado / Raciocínio)" },
     { value: "gemini-3.5-flash-lite", label: "Gemini 3.5 Flash-Lite (Super Rápido)" },
     { value: "gemini-3.7-flash", label: "Gemini 3.7 Flash (Rápido & Eficiente)" },
-    { value: "gemini-3.1-pro", label: "Gemini 3.1 Pro (Avançado / Raciocínio)" },
-    { value: "gemini-3.0-flash", label: "Gemini 3.0 Flash (Alta Performance)" },
-    { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro (Raciocínio & Código)" },
-    { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash (Equilibrado)" },
-    { value: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash-Lite (Super Rápido)" },
-    { value: "gemini-2.0-flash", label: "Gemini 2.0 Flash (Baixa Latência)" },
+    { value: "gemini-3.8-flash", label: "Gemini 3.8 Flash (Alta Velocidade & Eficiente)" },
+    { value: "gemini-3.8-live-extended-thinking", label: "Gemini 3.8 Live Extended Thinking" },
+
   ],
   OPENAI: [
     { value: "gpt-4.1-mini", label: "GPT-4.1 Mini (Rápido)" },
@@ -55,6 +57,19 @@ const MODEL_OPTIONS: Record<string, { value: string; label: string }[]> = {
     { value: "claude-sonnet-5", label: "Claude Sonnet 5 (Equilibrado / Padrão)" },
     { value: "claude-opus-5", label: "Claude Opus 5 (Raciocínio Profundo)" },
   ],
+  OPENROUTER: [
+    { value: "google/gemini-2.5-flash", label: "Gemini 2.5 Flash" },
+    { value: "openai/gpt-4o-mini", label: "GPT-4o Mini" },
+    { value: "anthropic/claude-sonnet-4", label: "Claude Sonnet 4" },
+    { value: "meta-llama/llama-3.3-70b-instruct", label: "Llama 3.3 70B" },
+    { value: "deepseek/deepseek-chat", label: "DeepSeek V3" },
+  ],
+  HUGGINGFACE: [
+    { value: "meta-llama/Llama-3.3-70B-Instruct", label: "Llama 3.3 70B Instruct" },
+    { value: "Qwen/Qwen3-32B", label: "Qwen3 32B" },
+    { value: "mistralai/Mistral-7B-Instruct-v0.3", label: "Mistral 7B Instruct" },
+    { value: "deepseek-ai/DeepSeek-R1", label: "DeepSeek R1 (Raciocínio)" },
+  ],
 };
 
 const LANGUAGE_OPTIONS = [
@@ -62,8 +77,33 @@ const LANGUAGE_OPTIONS = [
   { value: "en-US", label: "English (US)" },
 ];
 
+const FREE_TEXT_PROVIDERS = ["OPENROUTER", "HUGGINGFACE"];
+
+const IMAGE_MODEL_OPTIONS: Record<string, { value: string; label: string }[]> = {
+  GOOGLE: [
+    { value: "imagen-4.0-generate-001", label: "Imagen 4.0" },
+    { value: "imagen-4.0-fast-generate-001", label: "Imagen 4.0 Fast (econômico)" },
+    { value: "imagen-3.0-generate-002", label: "Imagen 3.0" },
+    { value: "gemini-2.5-flash-image", label: "Gemini 2.5 Flash Image" },
+  ],
+  OPENAI: [
+    { value: "dall-e-3", label: "DALL-E 3" },
+    { value: "gpt-image-1", label: "GPT Image 1" },
+    { value: "gpt-image-1-mini", label: "GPT Image 1 Mini (econômico)" },
+  ],
+  OPENROUTER: [
+    { value: "google/gemini-2.5-flash-image", label: "Gemini 2.5 Flash Image" },
+  ],
+  HUGGINGFACE: [
+    { value: "black-forest-labs/FLUX.1-schnell", label: "FLUX.1 Schnell (econômico)" },
+    { value: "black-forest-labs/FLUX.1-dev", label: "FLUX.1 Dev (qualidade)" },
+    { value: "stabilityai/stable-diffusion-xl-base-1.0", label: "Stable Diffusion XL" },
+  ],
+};
+
 export function SettingsPage() {
-  const { addToast, darkMode, toggleDarkMode, appLanguage, setAppLanguage } = useUIStore();
+  const { addToast, darkMode, setDarkMode, appLanguage, setAppLanguage } = useUIStore();
+  const { t } = useTranslation();
 
   const [provider, setProvider] = useState<string>("GOOGLE");
   const [modelName, setModelName] = useState<string>("gemini-1.5-flash");
@@ -72,13 +112,51 @@ export function SettingsPage() {
   const [showApiKey, setShowApiKey] = useState<boolean>(false);
   const [showTavilyKey, setShowTavilyKey] = useState<boolean>(false);
   const [temperature, setTemperature] = useState<number>(0.7);
+  const [imageProvider, setImageProvider] = useState<string>("NONE");
+  const [imageModel, setImageModel] = useState<string>("");
+  const [imageApiKey, setImageApiKey] = useState<string>("");
+  const [showImageKey, setShowImageKey] = useState<boolean>(false);
+  const [guidelines, setGuidelines] = useState<string>("");
   const [language, setLanguage] = useState<string>(appLanguage || "pt-BR");
+  const [pendingDarkMode, setPendingDarkMode] = useState<boolean>(darkMode);
   const [notifications, setNotifications] = useState<boolean>(true);
+
+  // Profile state
+  const [fullName, setFullName] = useState<string>("");
+  const [phone, setPhone] = useState<string>("");
+  const [whatsapp, setWhatsapp] = useState<string>("");
+  const [linkedinUrl, setLinkedinUrl] = useState<string>("");
+  const [githubUrl, setGithubUrl] = useState<string>("");
+  const [experienceSummary, setExperienceSummary] = useState<string>("");
+  const [salaryExpectation, setSalaryExpectation] = useState<string>("");
+
+  // Mantém o switch sincronizado caso o tema mude em outro lugar (sidebar/header)
+  useEffect(() => {
+    setPendingDarkMode(darkMode);
+  }, [darkMode]);
 
   const { data: serverSettings, isLoading } = useQuery({
     queryKey: ["settings"],
     queryFn: () => settingsApi.get(),
   });
+
+  // Fetch user profile
+  const { data: profileData, isLoading: profileLoading } = useQuery({
+    queryKey: ["profile"],
+    queryFn: () => emailApi.getProfile(),
+  });
+
+  useEffect(() => {
+    if (profileData) {
+      if (profileData.full_name) setFullName(profileData.full_name);
+      if (profileData.phone) setPhone(profileData.phone);
+      if (profileData.whatsapp) setWhatsapp(profileData.whatsapp);
+      if (profileData.linkedin_url) setLinkedinUrl(profileData.linkedin_url);
+      if (profileData.github_url) setGithubUrl(profileData.github_url);
+      if (profileData.experience_summary) setExperienceSummary(profileData.experience_summary);
+      if (profileData.salary_expectation) setSalaryExpectation(profileData.salary_expectation);
+    }
+  }, [profileData]);
 
   useEffect(() => {
     if (serverSettings) {
@@ -87,20 +165,34 @@ export function SettingsPage() {
       if (serverSettings.api_key) setApiKey(serverSettings.api_key);
       if (serverSettings.tavily_api_key) setTavilyApiKey(serverSettings.tavily_api_key);
       if (serverSettings.temperature !== undefined) setTemperature(serverSettings.temperature);
+      if (serverSettings.image_provider) setImageProvider(serverSettings.image_provider);
+      if (serverSettings.image_model) setImageModel(serverSettings.image_model);
+      if (serverSettings.image_api_key) setImageApiKey(serverSettings.image_api_key);
+      if (serverSettings.guidelines) setGuidelines(serverSettings.guidelines);
       if (serverSettings.language) {
         setLanguage(serverSettings.language);
-        setAppLanguage(serverSettings.language);
       }
     }
-  }, [serverSettings, setAppLanguage]);
+  }, [serverSettings]);
 
   const updateSettingsMutation = useMutation({
     mutationFn: (data: any) => settingsApi.update(data),
-    onSuccess: (res: any) => {
-      addToast({ type: "success", message: "Configurações salvas no servidor!" });
-      if (res?.language) setAppLanguage(res.language);
+    onSuccess: () => {
+      addToast({ type: "success", message: t("settings.toast.saveSuccess") });
+      setAppLanguage(language);
+      setDarkMode(pendingDarkMode);
     },
-    onError: () => addToast({ type: "error", message: "Erro ao salvar configurações" }),
+    onError: () =>
+      addToast({ type: "error", message: t("settings.toast.saveError") }),
+  });
+
+  const updateProfileMutation = useMutation({
+    mutationFn: (data: any) => emailApi.updateProfile(data),
+    onSuccess: () => {
+      addToast({ type: "success", message: t("settings.profile.toastSaveSuccess") });
+    },
+    onError: () =>
+      addToast({ type: "error", message: t("settings.profile.toastSaveError") }),
   });
 
   const handleSaveSettings = () => {
@@ -111,58 +203,23 @@ export function SettingsPage() {
       tavily_api_key: tavilyApiKey,
       temperature,
       language,
+      image_provider: imageProvider,
+      image_model: imageModel,
+      image_api_key: imageApiKey,
+      guidelines,
     });
   };
 
-  const handleExportData = () => {
-    try {
-      const data = {
-        presets: localStorage.getItem("code_image_presets"),
-        history_view: localStorage.getItem("history-store"),
-        ui: localStorage.getItem("ui-store"),
-      };
-      const blob = new Blob([JSON.stringify(data, null, 2)], {
-        type: "application/json",
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "trymypost-data.json";
-      a.click();
-      URL.revokeObjectURL(url);
-      addToast({ type: "success", message: "Dados exportados com sucesso!" });
-    } catch {
-      addToast({ type: "error", message: "Erro ao exportar dados" });
-    }
-  };
-
-  const handleImportData = (file: File | null) => {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const data = JSON.parse(event.target?.result as string);
-        if (data.presets) localStorage.setItem("code_image_presets", data.presets);
-        if (data.history_view) localStorage.setItem("history-store", data.history_view);
-        if (data.ui) localStorage.setItem("ui-store", data.ui);
-        addToast({ type: "success", message: "Dados importados com sucesso! Recarregue a página." });
-      } catch {
-        addToast({ type: "error", message: "Arquivo JSON inválido" });
-      }
-    };
-    reader.readAsText(file);
-  };
-
-  const handleClearAllData = () => {
-    if (
-      window.confirm(
-        "Tem certeza que deseja limpar todos os dados locais? Esta ação não pode ser desfeita."
-      )
-    ) {
-      localStorage.clear();
-      addToast({ type: "success", message: "Dados locais limpos com sucesso!" });
-      setTimeout(() => window.location.reload(), 1000);
-    }
+  const handleSaveProfile = () => {
+    updateProfileMutation.mutate({
+      full_name: fullName,
+      phone: phone,
+      whatsapp: whatsapp,
+      linkedin_url: linkedinUrl,
+      github_url: githubUrl,
+      experience_summary: experienceSummary || null,
+      salary_expectation: salaryExpectation || null,
+    });
   };
 
   const currentModels = MODEL_OPTIONS[provider] || MODEL_OPTIONS.GOOGLE;
@@ -176,11 +233,11 @@ export function SettingsPage() {
           </div>
 
           <h1 className="text-base font-semibold text-surface-900 dark:text-surface-50">
-            Configurações
+            {t("settings.title")}
           </h1>
 
           <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
-            Gerencie provedores de IA, chaves de API, idioma e preferências do aplicativo.
+            {t("settings.subtitle")}
           </p>
         </header>
 
@@ -189,16 +246,16 @@ export function SettingsPage() {
             <div>
               <h2 className="text-sm font-semibold text-surface-900 dark:text-surface-50 flex items-center gap-2">
                 <Cpu className="h-4 w-4 text-primary-500" />
-                Provedor & Modelo IA
+                {t("settings.providerModel.title")}
               </h2>
               <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
-                Selecione o provedor e modelo de inteligência artificial para geração de posts.
+                {t("settings.providerModel.description")}
               </p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2 pt-2">
               <div>
-                <Label className="mb-1 text-xs">Provedor IA</Label>
+                <Label className="mb-1 text-xs">{t("settings.provider.label")}</Label>
                 <Select
                   value={provider}
                   onChange={(val) => {
@@ -211,12 +268,20 @@ export function SettingsPage() {
               </div>
 
               <div>
-                <Label className="mb-1 text-xs">Modelo</Label>
-                <Select
-                  value={modelName}
-                  onChange={setModelName}
-                  options={currentModels}
-                />
+                <Label className="mb-1 text-xs">{t("settings.model.label")}</Label>
+                {FREE_TEXT_PROVIDERS.includes(provider) ? (
+                  <Input
+                    value={modelName}
+                    onChange={setModelName}
+                    placeholder="ex.: inclusionai/ling-3.0-flash-vl:free"
+                  />
+                ) : (
+                  <Select
+                    value={modelName}
+                    onChange={setModelName}
+                    options={currentModels}
+                  />
+                )}
               </div>
             </div>
 
@@ -224,9 +289,9 @@ export function SettingsPage() {
               <div className="flex items-center justify-between text-xs">
                 <Label className="mb-0 text-xs flex items-center gap-1.5">
                   <Sliders className="h-3.5 w-3.5 text-surface-400" />
-                  Temperatura: <span className="font-semibold text-primary-600">{temperature}</span>
+                  {t("settings.temperature.label")} <span className="font-semibold text-primary-600">{temperature}</span>
                 </Label>
-                <span className="text-[10px] text-surface-400">0.0 (Determinístico) - 1.0 (Criativo)</span>
+                <span className="text-[10px] text-surface-400">{t("settings.temperature.hint")}</span>
               </div>
               <input
                 type="range"
@@ -244,22 +309,22 @@ export function SettingsPage() {
             <div>
               <h2 className="text-sm font-semibold text-surface-900 dark:text-surface-50 flex items-center gap-2">
                 <Key className="h-4 w-4 text-primary-500" />
-                Chaves de API
+                {t("settings.apiKeys.title")}
               </h2>
               <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
-                Credenciais customizadas do provedor de IA e serviços de busca.
+                {t("settings.apiKeys.description")}
               </p>
             </div>
 
             <div className="space-y-4">
               <div>
-                <Label className="mb-1 text-xs">Chave API do Provedor ({provider})</Label>
+                <Label className="mb-1 text-xs">{t("settings.apiKeys.providerKeyLabel", { provider })}</Label>
                 <div className="flex gap-2">
                   <Input
                     type={showApiKey ? "text" : "password"}
                     value={apiKey}
                     onChange={setApiKey}
-                    placeholder={`Insira sua chave de API para ${provider}`}
+                    placeholder={t("settings.apiKeys.providerKeyPlaceholder", { provider })}
                     className="flex-1"
                   />
                   <Button variant="ghost" size="sm" onClick={() => setShowApiKey(!showApiKey)}>
@@ -269,13 +334,13 @@ export function SettingsPage() {
               </div>
 
               <div>
-                <Label className="mb-1 text-xs">Tavily API Key (Pesquisa Web)</Label>
+                <Label className="mb-1 text-xs">{t("settings.apiKeys.tavilyLabel")}</Label>
                 <div className="flex gap-2">
                   <Input
                     type={showTavilyKey ? "text" : "password"}
                     value={tavilyApiKey}
                     onChange={setTavilyApiKey}
-                    placeholder="Chave Tavily Search API"
+                    placeholder={t("settings.apiKeys.tavilyPlaceholder")}
                     className="flex-1"
                   />
                   <Button variant="ghost" size="sm" onClick={() => setShowTavilyKey(!showTavilyKey)}>
@@ -288,9 +353,9 @@ export function SettingsPage() {
                 <div className="flex items-start gap-3">
                   <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
                   <div className="text-xs text-amber-900 dark:text-amber-300">
-                    <p className="font-medium">Prioridade de Configuração</p>
+                    <p className="font-medium">{t("settings.apiKeys.priorityTitle")}</p>
                     <p className="mt-0.5 text-[11px] opacity-90">
-                      Caso as chaves acima fiquem em branco, o sistema utilizará as variáveis de ambiente predefinidas do servidor.
+                      {t("settings.apiKeys.priorityDescription")}
                     </p>
                   </div>
                 </div>
@@ -301,24 +366,206 @@ export function SettingsPage() {
           <section className="space-y-4 border-t border-surface-200 pt-6 dark:border-surface-800">
             <div>
               <h2 className="text-sm font-semibold text-surface-900 dark:text-surface-50 flex items-center gap-2">
-                <Globe className="h-4 w-4 text-primary-500" />
-                Idioma & Aparência
+                <Palette className="h-4 w-4 text-primary-500" />
+                {t("settings.imageGen.title")}
               </h2>
               <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
-                Idioma da interface e modo de exibição.
+                {t("settings.imageGen.description")}
+              </p>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2 pt-2">
+              <div>
+                <Label className="mb-1 text-xs">{t("settings.imageGen.providerLabel")}</Label>
+                <Select
+                  value={imageProvider}
+                  onChange={(val) => {
+                    setImageProvider(val);
+                    const models = IMAGE_MODEL_OPTIONS[val];
+                    if (models?.length) setImageModel(models[0].value);
+                  }}
+                  options={[
+                    { value: "NONE", label: t("settings.imageGen.none") },
+                    { value: "GOOGLE", label: "Google (Imagen / Gemini Image)" },
+                    { value: "OPENAI", label: "OpenAI (DALL-E / GPT Image)" },
+                    { value: "OPENROUTER", label: "OpenRouter" },
+                    { value: "HUGGINGFACE", label: "HuggingFace (FLUX / SDXL)" },
+                  ]}
+                />
+              </div>
+
+              <div>
+                <Label className="mb-1 text-xs">{t("settings.imageGen.modelLabel")}</Label>
+                {FREE_TEXT_PROVIDERS.includes(imageProvider) ? (
+                  <Input
+                    value={imageModel}
+                    onChange={setImageModel}
+                    placeholder="ex.: black-forest-labs/FLUX.1-schnell"
+                  />
+                ) : (
+                  <Select
+                    value={imageModel}
+                    onChange={setImageModel}
+                    options={IMAGE_MODEL_OPTIONS[imageProvider] || [
+                      { value: "", label: "—" },
+                    ]}
+                  />
+                )}
+              </div>
+            </div>
+
+            {imageProvider !== "NONE" && (
+              <div className="space-y-3">
+                <div>
+                  <Label className="mb-1 text-xs">{t("settings.imageGen.keyLabel")}</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type={showImageKey ? "text" : "password"}
+                      value={imageApiKey}
+                      onChange={setImageApiKey}
+                      placeholder={t("settings.apiKeys.providerKeyPlaceholder", { provider: imageProvider })}
+                      className="flex-1"
+                    />
+                    <Button variant="ghost" size="sm" onClick={() => setShowImageKey(!showImageKey)}>
+                      {showImageKey ? <XCircle className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-surface-500 dark:text-surface-400">
+                  {t("settings.imageGen.hint")}
+                </p>
+              </div>
+            )}
+          </section>
+
+          <section className="space-y-4 border-t border-surface-200 pt-6 dark:border-surface-800">
+            <div>
+              <h2 className="text-sm font-semibold text-surface-900 dark:text-surface-50 flex items-center gap-2">
+                <User className="h-4 w-4 text-primary-500" />
+                {t("settings.profile.title")}
+              </h2>
+              <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
+                {t("settings.profile.description")}
+              </p>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2 pt-2">
+              <div>
+                <Label className="mb-1 text-xs">{t("settings.profile.fullName")}</Label>
+                <Input
+                  value={fullName}
+                  onChange={setFullName}
+                  placeholder={t("settings.profile.fullNamePlaceholder")}
+                  className="w-full"
+                />
+              </div>
+
+              <div>
+                <Label className="mb-1 text-xs">{t("settings.profile.phone")}</Label>
+                <Input
+                  value={phone}
+                  onChange={setPhone}
+                  placeholder={t("settings.profile.phonePlaceholder")}
+                  className="w-full"
+                />
+              </div>
+
+              <div>
+                <Label className="mb-1 text-xs">{t("settings.profile.whatsapp")}</Label>
+                <Input
+                  value={whatsapp}
+                  onChange={setWhatsapp}
+                  placeholder={t("settings.profile.whatsappPlaceholder")}
+                  className="w-full"
+                />
+              </div>
+
+              <div>
+                <Label className="mb-1 text-xs">{t("settings.profile.linkedin")}</Label>
+                <div className="relative flex-1">
+                  <Linkedin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-surface-400" />
+                  <Input
+                    value={linkedinUrl}
+                    onChange={setLinkedinUrl}
+                    placeholder={t("settings.profile.linkedinPlaceholder")}
+                    className="pl-10 w-full"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label className="mb-1 text-xs">{t("settings.profile.github")}</Label>
+                <div className="relative flex-1">
+                  <Github className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-surface-400" />
+                  <Input
+                    value={githubUrl}
+                    onChange={setGithubUrl}
+                    placeholder={t("settings.profile.githubPlaceholder")}
+                    className="pl-10 w-full"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <Label className="mb-1 text-xs">{t("settings.profile.salaryExpectation")}</Label>
+              <Input
+                value={salaryExpectation}
+                onChange={setSalaryExpectation}
+                placeholder={t("settings.profile.salaryExpectationPlaceholder")}
+                className="w-full"
+              />
+              <p className="mt-1 text-[11px] text-surface-500 dark:text-surface-400">
+                {t("settings.profile.salaryExpectationHint")}
+              </p>
+            </div>
+
+            <div>
+              <Label className="mb-1 text-xs">{t("settings.profile.experienceSummary")}</Label>
+              <Textarea
+                value={experienceSummary}
+                onChange={setExperienceSummary}
+                placeholder={t("settings.profile.experienceSummaryPlaceholder")}
+                rows={6}
+                className="w-full text-sm"
+              />
+              <p className="mt-1 text-[11px] text-surface-500 dark:text-surface-400">
+                {t("settings.profile.experienceSummaryHint")}
+              </p>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <Button
+                variant="primary"
+                size="md"
+                onClick={handleSaveProfile}
+                loading={updateProfileMutation.isPending}
+                leftIcon={<Save className="h-4 w-4" />}
+              >
+                {t("settings.saveButton")}
+              </Button>
+            </div>
+          </section>
+
+          <section className="space-y-4 border-t border-surface-200 pt-6 dark:border-surface-800">
+            <div>
+              <h2 className="text-sm font-semibold text-surface-900 dark:text-surface-50 flex items-center gap-2">
+                <Globe className="h-4 w-4 text-primary-500" />
+                {t("settings.languageAppearance.title")}
+              </h2>
+              <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
+                {t("settings.languageAppearance.description")}
               </p>
             </div>
 
             <div className="space-y-4 pt-2">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <Label className="mb-1 text-xs">Idioma da Aplicação</Label>
+                  <Label className="mb-1 text-xs">{t("settings.language.label")}</Label>
                   <Select
                     value={language}
-                    onChange={(val) => {
-                      setLanguage(val);
-                      setAppLanguage(val);
-                    }}
+                    onChange={setLanguage}
                     options={LANGUAGE_OPTIONS}
                   />
                 </div>
@@ -327,22 +574,22 @@ export function SettingsPage() {
               <div className="flex items-center justify-between py-2 border-b border-surface-200 dark:border-surface-800">
                 <div>
                   <label className="text-xs font-medium text-surface-900 dark:text-surface-50 block">
-                    Modo Escuro
+                    {t("settings.darkMode.label")}
                   </label>
                   <p className="text-[11px] text-surface-500 dark:text-surface-400">
-                    Alternar entre tema claro e escuro
+                    {t("settings.darkMode.description")}
                   </p>
                 </div>
-                <Switch checked={darkMode} onChange={toggleDarkMode} />
+                <Switch checked={pendingDarkMode} onChange={setPendingDarkMode} />
               </div>
 
               <div className="flex items-center justify-between py-2 border-b border-surface-200 dark:border-surface-800">
                 <div>
                   <label className="text-xs font-medium text-surface-900 dark:text-surface-50 block">
-                    Notificações do Sistema
+                    {t("settings.notifications.label")}
                   </label>
                   <p className="text-[11px] text-surface-500 dark:text-surface-400">
-                    Exibir confirmações e mensagens Toast
+                    {t("settings.notifications.description")}
                   </p>
                 </div>
                 <Switch checked={notifications} onChange={setNotifications} />
@@ -358,70 +605,34 @@ export function SettingsPage() {
               loading={updateSettingsMutation.isPending}
               leftIcon={<Save className="h-4 w-4" />}
             >
-              Salvar Alterações
+              {t("settings.saveButton")}
             </Button>
           </div>
 
           <section className="space-y-4 border-t border-surface-200 pt-6 dark:border-surface-800">
             <div>
               <h2 className="text-sm font-semibold text-surface-900 dark:text-surface-50 flex items-center gap-2">
-                <Database className="h-4 w-4 text-primary-500" />
-                Dados Locais
+                <BookOpen className="h-4 w-4 text-primary-500" />
+                {t("settings.guidelines.title")}
               </h2>
               <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
-                Exporte ou limpe dados armazenados localmente no navegador.
+                {t("settings.guidelines.description")}
               </p>
             </div>
 
-            <div className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  leftIcon={<Download className="h-3.5 w-3.5" />}
-                  onClick={handleExportData}
-                >
-                  Exportar Dados (.json)
-                </Button>
-                <FileInput
-                  label=""
-                  accept=".json"
-                  onChange={handleImportData}
-                  hint="Importar backup local"
-                />
-              </div>
-
-              <div className="p-3 bg-red-50/70 dark:bg-red-950/20 border border-red-200/60 dark:border-red-900/40 rounded-md">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-xs font-medium text-red-900 dark:text-red-300">
-                        Redefinir Cache Local
-                      </p>
-                      <p className="text-[11px] text-red-700 dark:text-red-400 truncate">
-                        Limpa preferências locais do navegador.
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={handleClearAllData}
-                    leftIcon={<Trash2 className="h-3.5 w-3.5" />}
-                  >
-                    Limpar Tudo
-                  </Button>
-                </div>
-              </div>
-            </div>
+            <Textarea
+              value={guidelines}
+              onChange={setGuidelines}
+              placeholder={t("settings.guidelines.placeholder")}
+              rows={5}
+            />
           </section>
 
           <section className="space-y-4 border-t border-surface-200 pt-6 dark:border-surface-800">
             <div>
               <h2 className="text-sm font-semibold text-surface-900 dark:text-surface-50 flex items-center gap-2">
                 <Info className="h-4 w-4 text-primary-500" />
-                Sobre a Aplicação
+                {t("settings.about.title")}
               </h2>
             </div>
 
@@ -431,7 +642,7 @@ export function SettingsPage() {
                   <div className="flex items-center gap-2 mb-1">
                     <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
                     <span className="text-xs font-medium text-surface-900 dark:text-surface-50">
-                      Versão
+                      {t("settings.about.version")}
                     </span>
                   </div>
                   <p className="text-xs text-surface-500 dark:text-surface-400">1.0.0 Pro</p>
@@ -441,7 +652,7 @@ export function SettingsPage() {
                   <div className="flex items-center gap-2 mb-1">
                     <Shield className="h-3.5 w-3.5 text-blue-500" />
                     <span className="text-xs font-medium text-surface-900 dark:text-surface-50">
-                      Frontend
+                      {t("settings.about.frontend")}
                     </span>
                   </div>
                   <p className="text-xs text-surface-500 dark:text-surface-400">

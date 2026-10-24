@@ -10,20 +10,24 @@ import {
   Plus,
   Heart,
   X,
+  DollarSign,
   History as HistoryIcon,
 } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { Button, IconButton } from "@/components/ui";
-import { Input, Select } from "@/components/ui";
+import { Input, Select, DatePicker } from "@/components/ui";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
 import { Pagination } from "@/components/Pagination";
 import { postsApi } from "@/services/posts";
 import { useUIStore } from "@/store";
 import type { PostHistoryBase } from "@/types";
-import { STATUS_LABELS } from "@/constants/playground";
+import { getStatusLabels } from "@/constants/playground";
+import { useTranslation } from "@/i18n";
 
 export function HistoryPage() {
+  const { t, language } = useTranslation();
+  const statusLabels = getStatusLabels(t);
   const { addToast } = useUIStore();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -33,24 +37,43 @@ export function HistoryPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [favoriteFilter, setFavoriteFilter] = useState<boolean | undefined>(undefined);
+  const [hasCodeFilter, setHasCodeFilter] = useState<boolean | undefined>(undefined);
   const [sortBy, setSortBy] = useState<"created_at" | "updated_at">("created_at");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [editingTags, setEditingTags] = useState<{ id: string; tags: string[] } | null>(null);
 
+  const { data: usageSummary } = useQuery({
+    queryKey: ["usage-summary"],
+    queryFn: postsApi.usageSummary,
+  });
+
   const { data: historyData, isLoading } = useQuery({
-    queryKey: ["history", page, pageSize, search, statusFilter, favoriteFilter, sortBy, sortOrder],
+    queryKey: ["history", page, pageSize, search, statusFilter, favoriteFilter, hasCodeFilter, sortBy, sortOrder, startDate, endDate],
     queryFn: () =>
-      postsApi.list({ page, page_size: pageSize, search, status: statusFilter, is_favorite: favoriteFilter }),
+      postsApi.list({
+        page,
+        page_size: pageSize,
+        search,
+        status: statusFilter,
+        favorito: favoriteFilter,
+        has_code: hasCodeFilter,
+        start_date: startDate || undefined,
+        end_date: endDate || undefined,
+        sort_by: sortBy,
+        sort_order: sortOrder,
+      }),
   });
 
   const deleteMutation = useMutation({
     mutationFn: postsApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["history"] });
-      addToast({ type: "success", message: "Item excluído com sucesso" });
+      addToast({ type: "success", message: t("hist.toast.deleteSuccess") });
     },
-    onError: () => addToast({ type: "error", message: "Erro ao excluir item" }),
+    onError: () => addToast({ type: "error", message: t("hist.toast.deleteError") }),
   });
 
   const toggleFavoriteMutation = useMutation({
@@ -64,9 +87,9 @@ export function HistoryPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["history"] });
       setEditingTags(null);
-      addToast({ type: "success", message: "Tags atualizadas" });
+      addToast({ type: "success", message: t("hist.toast.tagsUpdated") });
     },
-    onError: () => addToast({ type: "error", message: "Erro ao atualizar tags" }),
+    onError: () => addToast({ type: "error", message: t("hist.toast.tagsError") }),
   });
 
   const handleSearch = useCallback((value: string) => {
@@ -75,7 +98,7 @@ export function HistoryPage() {
   }, []);
 
   const handleViewDetail = (post: PostHistoryBase) => {
-    navigate(`/post/${post.id}`);
+    navigate(`/history/posts/${post.id}`);
   };
 
   const handleDelete = (id: string) => {
@@ -118,51 +141,40 @@ export function HistoryPage() {
           </div>
 
           <h1 className="text-base font-semibold text-surface-900 dark:text-surface-50">
-            Histórico de Gerações
+            {t("hist.title")}
           </h1>
 
           <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
-            Gerencie e consulte todas as suas gerações anteriores de conteúdo.
+            {t("hist.subtitle")}
           </p>
+
+          {usageSummary && usageSummary.posts_with_usage > 0 && (
+            <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-400">
+              <DollarSign className="h-3 w-3" />
+              <span>
+                {t("hist.summary.label")}:
+                <strong className="ml-1">${usageSummary.total_cost_usd.toFixed(4)}</strong>
+              </span>
+              <span className="text-emerald-600/70 dark:text-emerald-500/70">
+                {t("hist.summary.perPost", { cost: `$${usageSummary.avg_cost_per_post.toFixed(4)}` })}
+              </span>
+            </div>
+          )}
         </header>
 
         <section className="space-y-3 mb-6">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-surface-400" />
-              <input
-                type="text"
-                placeholder="Buscar por tópico..."
-                value={search}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="w-full pl-9 pr-4 py-1.5 text-xs bg-white dark:bg-surface-900 border border-surface-200 dark:border-surface-800 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/30 text-surface-800 dark:text-surface-200 placeholder:text-surface-400"
-              />
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <Select
-                value={statusFilter}
-                onChange={setStatusFilter}
-                options={[
-                  { value: "", label: "Todos os status" },
-                  { value: "completed", label: "Concluídos" },
-                  { value: "processing", label: "Processando" },
-                  { value: "pending", label: "Pendentes" },
-                  { value: "failed", label: "Erros" },
-                ]}
-                className="w-32"
-              />
-
-              <Select
-                value={favoriteFilter?.toString() || ""}
-                onChange={(v) => setFavoriteFilter(v === "" ? undefined : v === "true")}
-                options={[
-                  { value: "", label: "Favoritos" },
-                  { value: "true", label: "Somente Favoritos" },
-                  { value: "false", label: "Não Favoritos" },
-                ]}
-                className="w-36"
-              />
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-surface-400" />
+                <input
+                  type="text"
+                  placeholder={t("hist.searchPlaceholder")}
+                  value={search}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className="w-full pl-9 pr-4 py-1.5 text-xs bg-white dark:bg-surface-900 border border-surface-200 dark:border-surface-800 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/30 text-surface-800 dark:text-surface-200 placeholder:text-surface-400"
+                />
+              </div>
 
               <Button
                 variant="ghost"
@@ -171,10 +183,62 @@ export function HistoryPage() {
                   setSortBy("created_at");
                   setSortOrder(sortOrder === "asc" ? "desc" : "asc");
                 }}
-                title="Ordenar por data"
+                title={t("hist.filters.sortByDate")}
               >
                 <Clock className="h-3.5 w-3.5" />
               </Button>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <Select
+                value={statusFilter}
+                onChange={setStatusFilter}
+                options={[
+                  { value: "", label: t("hist.filters.allStatuses") },
+                  { value: "completed", label: t("hist.filters.completed") },
+                  { value: "processing", label: t("hist.filters.processing") },
+                  { value: "pending", label: t("hist.filters.pending") },
+                  { value: "failed", label: t("hist.filters.failed") },
+                ]}
+                className="w-full"
+              />
+
+              <Select
+                value={favoriteFilter?.toString() || ""}
+                onChange={(v) => setFavoriteFilter(v === "" ? undefined : v === "true")}
+                options={[
+                  { value: "", label: t("hist.filters.favorites") },
+                  { value: "true", label: t("hist.filters.onlyFavorites") },
+                  { value: "false", label: t("hist.filters.nonFavorites") },
+                ]}
+                className="w-full"
+              />
+
+              <Select
+                value={hasCodeFilter?.toString() || ""}
+                onChange={(v) => {
+                  setHasCodeFilter(v === "" ? undefined : v === "true");
+                  setPage(1);
+                }}
+                options={[
+                  { value: "", label: t("hist.filters.code") },
+                  { value: "true", label: t("hist.filters.withCode") },
+                  { value: "false", label: t("hist.filters.withoutCode") },
+                ]}
+                className="w-full"
+              />
+
+              <DatePicker
+                startDate={startDate}
+                endDate={endDate}
+                onChange={(start, end) => {
+                  setStartDate(start);
+                  setEndDate(end);
+                  setPage(1);
+                }}
+                placeholder={t("hist.filters.datePlaceholder")}
+                className="w-full"
+              />
             </div>
           </div>
         </section>
@@ -195,21 +259,21 @@ export function HistoryPage() {
                 <HistoryIcon className="h-4 w-4 text-surface-400" />
               </div>
               <p className="text-xs font-medium text-surface-700 dark:text-surface-300">
-                Nenhuma geração encontrada.
+                {t("hist.empty.title")}
               </p>
               <p className="mt-1 text-[11px] text-surface-400">
-                {search || statusFilter || favoriteFilter !== undefined
-                  ? "Tente ajustar os filtros de busca."
-                  : "Crie seu primeiro post na aba Playground."}
+                {search || statusFilter || favoriteFilter !== undefined || hasCodeFilter !== undefined
+                  ? t("hist.empty.adjustFilters")
+                  : t("hist.empty.createFirst")}
               </p>
-              {!search && !statusFilter && favoriteFilter === undefined && (
+              {!search && !statusFilter && favoriteFilter === undefined && hasCodeFilter === undefined && (
                 <Button
                   onClick={() => navigate("/playground")}
                   leftIcon={<Plus className="h-3.5 w-3.5" />}
                   className="mt-4"
                   size="sm"
                 >
-                  Criar Post
+                  {t("hist.empty.createButton")}
                 </Button>
               )}
             </div>
@@ -217,7 +281,7 @@ export function HistoryPage() {
             <>
               <div className="mb-3 flex items-center justify-between text-[11px] text-surface-400">
                 <span>
-                  Exibindo {historyData!.items.length} de {historyData!.total} registros
+                  {t("hist.showing", { count: historyData!.items.length, total: historyData!.total })}
                 </span>
                 <Select
                   value={pageSize.toString()}
@@ -226,9 +290,9 @@ export function HistoryPage() {
                     setPage(1);
                   }}
                   options={[
-                    { value: "5", label: "5 por pg" },
-                    { value: "10", label: "10 por pg" },
-                    { value: "20", label: "20 por pg" },
+                    { value: "5", label: t("hist.perPage", { count: 5 }) },
+                    { value: "10", label: t("hist.perPage", { count: 10 }) },
+                    { value: "20", label: t("hist.perPage", { count: 20 }) },
                   ]}
                   className="w-28"
                 />
@@ -245,16 +309,16 @@ export function HistoryPage() {
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2 mb-1.5">
                           <Badge
-                            variant={STATUS_LABELS[post.status]?.variant || "neutral"}
+                            variant={statusLabels[post.status]?.variant || "neutral"}
                             size="sm"
                             className="text-[10px]"
                           >
-                            {STATUS_LABELS[post.status]?.label || post.status}
+                            {statusLabels[post.status]?.label || post.status}
                           </Badge>
 
                           {post.is_edited && (
                             <Badge variant="warning" size="sm" className="text-[10px]">
-                              Editada
+                              {t("hist.editedBadge")}
                             </Badge>
                           )}
 
@@ -265,11 +329,25 @@ export function HistoryPage() {
                           <span className="text-surface-300 dark:text-surface-700">•</span>
 
                           <span className="text-[11px] text-surface-400">
-                            {new Date(post.created_at).toLocaleDateString("pt-BR")}
+                            {new Date(post.created_at).toLocaleDateString(language)}
                           </span>
 
                           {post.is_favorite && (
                             <Heart className="h-3 w-3 text-red-500 fill-current" />
+                          )}
+
+                          {post.total_cost_usd != null && post.total_cost_usd > 0 && (
+                            <Badge
+                              variant="success"
+                              size="sm"
+                              className="text-[10px]"
+                              title={t("hist.usage.totalCost")}
+                            >
+                              <DollarSign className="h-2.5 w-2.5" />
+                              {post.total_cost_usd < 0.01
+                                ? post.total_cost_usd.toFixed(5)
+                                : post.total_cost_usd.toFixed(4)}
+                            </Badge>
                           )}
                         </div>
 
@@ -304,7 +382,7 @@ export function HistoryPage() {
                             });
                           }}
                           className={post.is_favorite ? "text-red-500" : ""}
-                          title={post.is_favorite ? "Remover dos favoritos" : "Favoritar"}
+                          title={post.is_favorite ? t("hist.actions.removeFavorite") : t("hist.actions.favorite")}
                         >
                           <Heart
                             className={cn("h-3.5 w-3.5", post.is_favorite ? "fill-current" : "")}
@@ -318,7 +396,7 @@ export function HistoryPage() {
                             e.stopPropagation();
                             handleTagEdit(post);
                           }}
-                          title="Editar tags"
+                          title={t("hist.actions.editTags")}
                         >
                           <Tag className="h-3.5 w-3.5" />
                         </Button>
@@ -330,7 +408,7 @@ export function HistoryPage() {
                             e.stopPropagation();
                             handleDelete(post.id);
                           }}
-                          title="Excluir"
+                          title={t("hist.actions.delete")}
                         >
                           <Trash2 className="h-3.5 w-3.5 text-red-500" />
                         </Button>
@@ -353,15 +431,15 @@ export function HistoryPage() {
           <Modal
             isOpen={!!showDeleteConfirm}
             onClose={() => setShowDeleteConfirm(null)}
-            title="Confirmar Exclusão"
-            description="Esta ação não poderá ser desfeita."
+            title={t("hist.deleteModal.title")}
+            description={t("hist.deleteModal.description")}
           >
             <p className="text-xs text-surface-600 dark:text-surface-400 mb-6">
-              Tem certeza de que deseja excluir este registro do histórico?
+              {t("hist.deleteModal.confirm")}
             </p>
             <div className="flex justify-end gap-2">
               <Button variant="secondary" onClick={() => setShowDeleteConfirm(null)}>
-                Cancelar
+                {t("hist.deleteModal.cancel")}
               </Button>
               <Button
                 variant="danger"
@@ -369,7 +447,7 @@ export function HistoryPage() {
                   if (showDeleteConfirm) confirmDelete(showDeleteConfirm);
                 }}
               >
-                Excluir
+                {t("hist.deleteModal.delete")}
               </Button>
             </div>
           </Modal>
@@ -377,7 +455,7 @@ export function HistoryPage() {
           <Modal
             isOpen={!!editingTags}
             onClose={() => setEditingTags(null)}
-            title="Editar Tags"
+            title={t("hist.tagsModal.title")}
             size="md"
           >
             {editingTags && (
@@ -389,7 +467,7 @@ export function HistoryPage() {
                       <IconButton
                         variant="ghost"
                         size="sm"
-                        ariaLabel={`Remover ${tag}`}
+                        ariaLabel={t("hist.tagsModal.removeAria", { tag })}
                         onClick={() => handleTagRemove(tag)}
                       >
                         <X className="h-3 w-3" />
@@ -399,7 +477,7 @@ export function HistoryPage() {
                 </div>
                 <div className="flex gap-2">
                   <Input
-                    placeholder="Nome da tag..."
+                    placeholder={t("hist.tagsModal.placeholder")}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault();
@@ -415,15 +493,15 @@ export function HistoryPage() {
                       handleTagAdd(editingTags.tags[editingTags.tags.length - 1] || "");
                     }}
                   >
-                    Adicionar
+                    {t("hist.tagsModal.add")}
                   </Button>
                 </div>
                 <div className="flex justify-end gap-2 pt-3 border-t border-surface-200 dark:border-surface-700">
                   <Button variant="secondary" onClick={() => setEditingTags(null)}>
-                    Cancelar
+                    {t("hist.tagsModal.cancel")}
                   </Button>
                   <Button variant="primary" onClick={handleTagSave}>
-                    Salvar
+                    {t("hist.tagsModal.save")}
                   </Button>
                 </div>
               </div>

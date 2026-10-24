@@ -1,0 +1,28 @@
+_type: prompt
+input_variables: ["job_description"]
+template: |
+  Analyze the following job description and extract structured information.
+  Return ONLY valid JSON with these exact fields:
+  {{
+    "job_title": "string or null",
+    "company_name": "string or null", 
+    "recruiter_name": "string or null",
+    "recruiter_email": "string or null",
+    "key_requirements": ["string"],
+    "technologies": ["string"],
+    "experience_desired": ["string"],
+    "location_modality": "string or null",
+    "salary_info": "string or null",
+    "salary_expectation_required": boolean
+  }}
+  
+  RULES:
+  - Only extract information EXPLICITLY present in the description
+  - For recruiter_email: ONLY return if explicitly written (e.g., "email: x@y.com" or "contact: x@y.com")
+  - NEVER infer or guess emails from names/domains
+  - salary_expectation_required: true ONLY if text explicitly asks candidate to provide salary expectations
+  - If salary range is OFFERED (not requested), salary_expectation_required = false
+  - Return null for any field not found
+  
+  JOB DESCRIPTION:
+  {job_description}

@@ -3,7 +3,8 @@ import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { Card, CardBody } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import type { PostVariation } from '@/types/common'
+import { useTranslation } from '@/i18n'
+import type { PostVariation } from '@/types'
 
 interface PostVariationCardProps {
   post: PostVariation
@@ -26,6 +27,8 @@ export function PostVariationCard({
   onGenerateCodeImage,
   styleIcon: StyleIcon = FileText,
 }: PostVariationCardProps) {
+  const { t } = useTranslation()
+
   return (
     <Card
       variant="bordered"
@@ -41,7 +44,7 @@ export function PostVariationCard({
         <div className="mb-3 flex items-start justify-between gap-3">
           <div className="flex items-center gap-2">
             <span className="rounded-full bg-primary-100 px-2 py-1 text-xs font-medium text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
-              Variation {post.variation || index + 1}
+              {t('pg.variation', { n: post.variation || index + 1 })}
             </span>
 
             <StyleIcon className="h-4 w-4 text-primary-500 dark:text-primary-400" />
@@ -50,7 +53,7 @@ export function PostVariationCard({
           <div
             className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
             role="group"
-            aria-label="Post actions"
+            aria-label={t('pg.postActions')}
           >
             <Button
               variant="ghost"
@@ -61,7 +64,7 @@ export function PostVariationCard({
               }}
               leftIcon={<Copy className="h-3.5 w-3.5" />}
             >
-              Copy
+              {t('pg.copy')}
             </Button>
 
             <Button
@@ -73,7 +76,7 @@ export function PostVariationCard({
               }}
               leftIcon={<Eye className="h-3.5 w-3.5" />}
             >
-              Preview
+              {t('pg.preview')}
             </Button>
 
             <Button
@@ -85,7 +88,7 @@ export function PostVariationCard({
               }}
               leftIcon={<Code2 className="h-3.5 w-3.5" />}
             >
-              Code Image
+              {t('pg.codeImage')}
             </Button>
           </div>
         </div>

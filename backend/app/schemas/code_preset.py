@@ -7,6 +7,7 @@ class CodePresetBase(BaseModel):
     theme: str
     language: str
     font_family: str
+    syntax_theme: str = "vscode-dark"
     font_size: str
     padding: str
     window_style: str

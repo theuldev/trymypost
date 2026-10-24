@@ -1,17 +1,20 @@
 import { useCallback, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Copy, Download, Plus } from "lucide-react";
 
 import { PlaygroundResults, type ResultTab } from "@/features/playground/components/PlaygroundResults";
 import { Badge } from "@/components/ui/Badge";
+import { Breadcrumb } from "@/components/ui/Breadcrumb";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { useGenerationStore, useUIStore } from "@/store";
+import { useTranslation } from "@/i18n";
 
 import type { PostVariation } from "@/types";
 
 export function PlaygroundResultsPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { addToast } = useUIStore();
   const { result, style, formData } = useGenerationStore();
 
@@ -29,15 +32,15 @@ export function PlaygroundResultsPage() {
   const audience = formData?.audience ?? "";
 
   const handleCopy = useCallback(
-    async (text: string, message = "Copied to clipboard!") => {
+    async (text: string, message?: string) => {
       try {
         await navigator.clipboard.writeText(text);
-        addToast({ type: "success", message });
+        addToast({ type: "success", message: message ?? t("pg.copied") });
       } catch {
-        addToast({ type: "error", message: "Failed to copy to clipboard." });
+        addToast({ type: "error", message: t("pg.copyFailed") });
       }
     },
-    [addToast],
+    [addToast, t],
   );
 
   const handleOpenPreview = useCallback((post: PostVariation) => {
@@ -47,7 +50,7 @@ export function PlaygroundResultsPage() {
 
   const handleGenerateCodeImage = useCallback(
     (code: string, language: string) => {
-      navigate("/code-image", {
+      navigate("/tools/code-image", {
         state: {
           initialCode: code,
           initialLanguage: language,
@@ -62,7 +65,7 @@ export function PlaygroundResultsPage() {
     const content = variations
       .map(
         (variation, index) =>
-          `Variation ${index + 1}\n\n${variation.content}`,
+          `${t("pg.variation", { n: index + 1 })}\n\n${variation.content}`,
       )
       .join("\n\n------------------------------\n\n");
 
@@ -83,10 +86,10 @@ export function PlaygroundResultsPage() {
       <div className="flex min-h-screen items-center justify-center bg-surface-50 dark:bg-surface-950">
         <div className="w-full max-w-md text-center">
           <p className="text-sm font-semibold text-surface-900 dark:text-surface-50">
-            Nenhum resultado encontrado
+            {t("pg.noResults")}
           </p>
           <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
-            Gere um post para visualizar os resultados.
+            {t("pg.noResultsHint")}
           </p>
           <Button
             onClick={() => navigate("/playground")}
@@ -94,7 +97,7 @@ export function PlaygroundResultsPage() {
             className="mt-5"
             size="sm"
           >
-            Novo Post
+            {t("pg.newPost")}
           </Button>
         </div>
       </div>
@@ -107,17 +110,17 @@ export function PlaygroundResultsPage() {
         <header className="border-b border-surface-200 pb-5 dark:border-surface-800">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <Link
-                to="/playground"
-                className="mb-3 inline-flex items-center text-xs text-surface-400 transition-colors hover:text-surface-700 dark:hover:text-surface-200"
-              >
-                <ArrowLeft className="mr-1 h-3.5 w-3.5" />
-                Novo Post
-              </Link>
+              <Breadcrumb
+                className="mb-3"
+                items={[
+                  { label: "Playground", to: "/playground" },
+                  { label: t("pg.resultsTitle") },
+                ]}
+              />
 
               <div className="mb-2 flex flex-wrap items-center gap-2">
                 <Badge variant="success" size="sm" className="text-[10px]">
-                  Concluído
+                  {t("pg.completed")}
                 </Badge>
 
                 <span className="text-[11px] text-surface-400">
@@ -146,8 +149,16 @@ export function PlaygroundResultsPage() {
               <Button
                 variant="ghost"
                 size="sm"
+                onClick={() => navigate("/playground")}
+                leftIcon={<ArrowLeft className="h-3.5 w-3.5" />}
+              >
+                {t("pg.backToEdit")}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={handleDownload}
-                title="Baixar TXT"
+                title={t("pg.downloadTxt")}
               >
                 <Download className="h-3.5 w-3.5" />
               </Button>
@@ -172,7 +183,7 @@ export function PlaygroundResultsPage() {
       <Modal
         isOpen={showPreviewModal}
         onClose={() => setShowPreviewModal(false)}
-        title="Post Preview"
+        title={t("pg.previewTitle")}
         size="xl"
       >
         {selectedVariation && (
@@ -189,7 +200,7 @@ export function PlaygroundResultsPage() {
                 onClick={() => handleCopy(selectedVariation.content)}
               >
                 <Copy className="mr-2 h-4 w-4" />
-                Copy Text
+                {t("pg.copyText")}
               </Button>
             </div>
           </div>

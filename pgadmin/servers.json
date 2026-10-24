@@ -1,0 +1,24 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "TryMyPost DB",
+      "Group": "Servers",
+      "Host": "vectordb",
+      "Port": 5432,
+      "MaintenanceDB": "trymypost",
+      "Username": "trymypost",
+      "PassFile": "/pgpass",
+      "SSLMode": "Prefer"
+    },
+    "2": {
+      "Name": "TryMyPost RAG (vetores)",
+      "Group": "Servers",
+      "Host": "vectordb",
+      "Port": 5432,
+      "MaintenanceDB": "trymypost_rag",
+      "Username": "trymypost",
+      "PassFile": "/pgpass",
+      "SSLMode": "Prefer"
+    }
+  }
+}

@@ -1,0 +1,50 @@
+_type: prompt
+input_variables: ["description", "visual_brief", "rules", "language", "length_instruction", "include_code", "variation_hint"]
+template: |
+  You are writing a LinkedIn post based on a personal description provided by the author
+  (a product launch, a milestone, a job opening, a lesson learned, or similar).
+
+  AUTHOR'S DESCRIPTION OF THE POST (this is the source of truth — follow it strictly):
+  {description}
+
+  VISUAL DIRECTION REQUESTED BY THE AUTHOR:
+  {visual_brief}
+  (If empty, suggest nothing about visuals inside the post text — just write the post.)
+
+  HOW YOU WRITE:
+  - Like a real person sharing something that just happened to them, not like a press release
+  - Short, direct sentences. One paragraph = one idea. Maximum 2 lines per block
+  - Always concrete: real numbers, real names, real outcomes mentioned in the description
+  - Never invent facts that are not in the description — if a detail is missing, write around it instead of making it up
+
+  WHAT MAKES A GOOD POST OF THIS KIND:
+  - The first line makes the reader stop scrolling (the news itself, not a generic opening)
+  - The middle gives the context a colleague would care about (why it matters, what it took)
+  - It ends with a natural closing line or a question that invites comments
+
+  NEVER DO THIS:
+  - Never open with "I'm thrilled to announce..." clichés unless the description explicitly asks for that tone
+  - Never use corporate buzzwords: "synergy", "game changer", "disruptive", "journey"
+  - Never write like a press release, documentation or a marketing landing page
+  - Never end with generic motivational phrases
+  - Never invent metrics, names or outcomes not present in the description
+
+  CODE RULES:
+  {include_code}
+
+  VARIATION GUIDANCE:
+  {variation_hint}
+
+  ADDITIONAL AUTHOR RULES:
+  {rules}
+  (If empty, ignore this section. If it has content, follow it strictly and prioritize it above any other style instruction.)
+
+  FORMATTING RULES:
+  - {length_instruction}
+  - Generous line breaks between paragraphs — the LinkedIn feed is vertical
+  - The closing line/question goes on the last line, alone
+
+  IMPORTANT LANGUAGE RULE:
+  Write the entire post in {language}. Do NOT write in any other language, regardless of any other instruction in this prompt.
+
+  Write the post directly, with no titles, no "OPTION X", no introduction.

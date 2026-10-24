@@ -33,6 +33,23 @@ class LLMFactory:
                 api_key=settings.api_key,
             )
 
+        if provider == "OPENROUTER":
+            return ChatOpenAI(
+                model=settings.model_name,
+                temperature=settings.temperature,
+                api_key=settings.api_key,
+                base_url="https://openrouter.ai/api/v1",
+            )
+
+        if provider == "HUGGINGFACE":
+            # Endpoint OpenAI-compatible do HuggingFace Inference Providers
+            return ChatOpenAI(
+                model=settings.model_name,
+                temperature=settings.temperature,
+                api_key=settings.api_key,
+                base_url="https://router.huggingface.co/v1",
+            )
+
         raise ValueError(
             f"Unsupported AI provider: {settings.provider}"
         )

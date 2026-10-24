@@ -1,24 +1,47 @@
-import { Palette } from 'lucide-react'
-import { Card, CardBody } from '@/components/ui/Card'
+import { Badge } from '@/components/ui/Badge'
+
+interface VisualSuggestion {
+  visual_description?: string
+  code_example?: string
+  suggested_tools?: string[]
+}
 
 interface VisualCardProps {
-  visual: any
+  visual: VisualSuggestion | string
 }
 
 export function VisualCard({ visual }: VisualCardProps) {
+  if (typeof visual === 'string') {
+    return (
+      <p className="whitespace-pre-wrap text-xs leading-relaxed text-surface-700 dark:text-surface-300">
+        {visual}
+      </p>
+    )
+  }
+
   return (
-    <Card variant="bordered">
-      <CardBody className="p-4 space-y-3">
-        <div className="flex items-center gap-2">
-          <Palette className="h-5 w-5 text-primary-500" />
-          <h3 className="font-medium text-surface-900 dark:text-surface-100 text-sm">
-            Visual Suggestion
-          </h3>
+    <div className="space-y-3">
+      {visual.visual_description && (
+        <p className="whitespace-pre-wrap text-xs leading-relaxed text-surface-700 dark:text-surface-300">
+          {visual.visual_description}
+        </p>
+      )}
+
+      {visual.code_example && (
+        <pre className="max-h-48 overflow-y-auto rounded-md bg-surface-900 p-3 font-mono text-xs text-surface-100">
+          {visual.code_example}
+        </pre>
+      )}
+
+      {visual.suggested_tools && visual.suggested_tools.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 pt-2">
+          {visual.suggested_tools.map((tool, i) => (
+            <Badge key={i} variant="neutral" size="sm" className="text-[10px]">
+              {tool}
+            </Badge>
+          ))}
         </div>
-        <div className="text-xs text-surface-600 dark:text-surface-300 leading-relaxed whitespace-pre-wrap">
-          {typeof visual === 'string' ? visual : JSON.stringify(visual, null, 2)}
-        </div>
-      </CardBody>
-    </Card>
+      )}
+    </div>
   )
 }

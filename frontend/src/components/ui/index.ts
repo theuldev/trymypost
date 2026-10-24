@@ -12,9 +12,6 @@ export type { SelectProps, SelectOption } from './Select'
 export { Switch } from './Switch'
 export type { SwitchProps } from './Switch'
 
-export { RadioGroup, RadioGroupItem } from './RadioGroup'
-export type { RadioGroupProps, RadioGroupItemProps } from './RadioGroup'
-
 export { Card, CardHeader, CardBody, CardFooter } from './Card'
 export type { CardProps } from './Card'
 
@@ -30,4 +27,12 @@ export type { BadgeProps } from './Badge'
 export { Slider } from './Slider'
 export type { SliderProps } from './Slider'
 
+export { DatePicker } from './DatePicker'
+export type { DateRangePickerProps } from './DatePicker'
+
+export { SegmentedControl } from './SegmentedControl'
+export type { SegmentedControlProps, SegmentedOption } from './SegmentedControl'
+
 export { Pagination } from '../Pagination'
+export { Breadcrumb } from './Breadcrumb'
+export type { BreadcrumbProps, BreadcrumbItem } from './Breadcrumb'

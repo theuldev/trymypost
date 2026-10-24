@@ -1,18 +1,12 @@
 import {
-  BarChart2,
-  BookOpen,
   CheckCircle,
   Code2,
   FileText,
   Flag,
-  GraduationCap,
-  Heart,
-  MessageSquare,
   Minus,
   Palette,
   Tag,
   TrendingUp,
-  Users,
   Zap,
 } from "lucide-react";
 
@@ -20,15 +14,9 @@ import type { FormatEnum } from "@/types";
 
 export const WRITING_STYLES = [
   "Technical",
-  "Storytelling",
-  "Opinion/Controversial",
-  "Educational",
-  "Career/Soft Skills",
   "Humor/Technology",
   "Minimalist",
-  "Case Study",
   "Trends/News",
-  "Personal/Autobiographical",
 ] as const;
 
 export const TARGET_AUDIENCES = [
@@ -93,39 +81,49 @@ export const FORMAT_DESCRIPTIONS: Record<FormatEnum, string> = {
 
 export const STYLE_ICONS = {
   Technical: Code2,
-  Storytelling: BookOpen,
-  "Opinion/Controversial": MessageSquare,
-  Educational: GraduationCap,
-  "Career/Soft Skills": Users,
   "Humor/Technology": Zap,
   Minimalist: Minus,
-  "Case Study": BarChart2,
   "Trends/News": TrendingUp,
-  "Personal/Autobiographical": Heart,
 };
 
-export const STATUS_LABELS = {
-  completed: {
-    label: "Concluído",
-    variant: "success",
-  },
-  processing: {
-    label: "Processando",
-    variant: "warning",
-  },
-  pending: {
-    label: "Pendente",
-    variant: "neutral",
-  },
-  failed: {
-    label: "Erro",
-    variant: "danger",
-  },
-  cancelled: {
-    label: "Cancelado",
-    variant: "neutral",
-  },
-} as const;
+type TranslateFn = (
+  key: string,
+  vars?: Record<string, string | number>,
+) => string;
+
+export type StatusLabelVariant =
+  | "primary"
+  | "success"
+  | "warning"
+  | "danger"
+  | "neutral";
+
+export function getStatusLabels(
+  t: TranslateFn,
+): Record<string, { label: string; variant: StatusLabelVariant }> {
+  return {
+    completed: {
+      label: t("hist.status.completed"),
+      variant: "success",
+    },
+    processing: {
+      label: t("hist.status.processing"),
+      variant: "warning",
+    },
+    pending: {
+      label: t("hist.status.pending"),
+      variant: "neutral",
+    },
+    failed: {
+      label: t("hist.status.failed"),
+      variant: "danger",
+    },
+    cancelled: {
+      label: t("hist.status.cancelled"),
+      variant: "neutral",
+    },
+  };
+}
 
 export const RESULT_TABS = [
   {

@@ -1,9 +1,6 @@
-import { Plus } from 'lucide-react'
-import type { Dispatch, SetStateAction } from 'react'
-
-import { Input, Select, Switch, Textarea, Slider } from '@/components/ui'
-import type { GeneratePostRequest } from '@/types/common'
-import { cn } from '@/utils/cn'
+import { Input, Select, Switch, Slider } from '@/components/ui'
+import type { GeneratePostRequest } from '@/types'
+import { useTranslation } from '@/i18n'
 
 import {
   AUDIENCE_OPTIONS,
@@ -23,8 +20,6 @@ export type UpdateFormField = <K extends keyof GeneratePostRequest>(
 interface PlaygroundFormProps {
   formData: GeneratePostRequest
   updateFormField: UpdateFormField
-  showGuidelines: boolean
-  setShowGuidelines: Dispatch<SetStateAction<boolean>>
   isSubmitting: boolean
   isGenerating: boolean
 }
@@ -32,27 +27,27 @@ interface PlaygroundFormProps {
 export function PlaygroundForm({
   formData,
   updateFormField,
-  showGuidelines,
-  setShowGuidelines,
   isSubmitting,
   isGenerating,
 }: PlaygroundFormProps) {
+  const { t } = useTranslation()
+
   return (
     <div className="mt-8 space-y-6">
       <section className="space-y-4">
         <div>
           <h2 className="text-sm font-semibold text-surface-900 dark:text-surface-50">
-            Topic
+            {t('pg.topicTitle')}
           </h2>
           <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
-            What do you want to talk about?
+            {t('pg.topicSubtitle')}
           </p>
         </div>
 
         <Input
           value={formData.topic}
           onChange={(value) => updateFormField('topic', value)}
-          placeholder="e.g. How AI is changing software development"
+          placeholder={t('pg.topicPlaceholder')}
           disabled={isSubmitting || isGenerating}
         />
       </section>
@@ -60,16 +55,16 @@ export function PlaygroundForm({
       <section className="space-y-4">
         <div>
           <h2 className="text-sm font-semibold text-surface-900 dark:text-surface-50">
-            Configuration
+            {t('pg.configTitle')}
           </h2>
           <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
-            Define who the content is for and how it should sound.
+            {t('pg.configSubtitle')}
           </p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Select
-            label="Writing style"
+            label={t('pg.styleLabel')}
             value={formData.style}
             onChange={(value) =>
               updateFormField('style', value as GeneratePostRequest['style'])
@@ -79,7 +74,7 @@ export function PlaygroundForm({
           />
 
           <Select
-            label="Target audience"
+            label={t('pg.audienceLabel')}
             value={formData.audience}
             onChange={(value) =>
               updateFormField('audience', value as GeneratePostRequest['audience'])
@@ -89,7 +84,7 @@ export function PlaygroundForm({
           />
 
           <Select
-            label="Experience level"
+            label={t('pg.experienceLabel')}
             value={formData.experience}
             onChange={(value) =>
               updateFormField('experience', value as GeneratePostRequest['experience'])
@@ -99,7 +94,7 @@ export function PlaygroundForm({
           />
 
           <Select
-            label="Content goal"
+            label={t('pg.goalLabel')}
             value={formData.objective}
             onChange={(value) =>
               updateFormField('objective', value as GeneratePostRequest['objective'])
@@ -113,16 +108,16 @@ export function PlaygroundForm({
       <section className="space-y-4">
         <div>
           <h2 className="text-sm font-semibold text-surface-900 dark:text-surface-50">
-            Content
+            {t('pg.contentTitle')}
           </h2>
           <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
-            Choose the structure and amount of content to generate.
+            {t('pg.contentSubtitle')}
           </p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Select
-            label="Format"
+            label={t('pg.formatLabel')}
             value={formData.format}
             onChange={(value) =>
               updateFormField('format', value as GeneratePostRequest['format'])
@@ -132,7 +127,7 @@ export function PlaygroundForm({
           />
 
           <Select
-            label="Quantity"
+            label={t('pg.quantityLabel')}
             value={String(formData.quantity)}
             onChange={(value) => updateFormField('quantity', Number(value))}
             options={QUANTITY_OPTIONS}
@@ -140,37 +135,38 @@ export function PlaygroundForm({
           />
 
           <Slider
-            label="Post Size"
+            label={t('pg.postSizeLabel')}
             value={formData.max_length ?? 2000}
             onChange={(value) => updateFormField('max_length', value)}
             min={10}
             max={10000}
             step={100}
-            disabled={isSubmitting || isGenerating}
-            minLabel="10 chars"
-            maxLabel="10000 chars"
+            disabled={isSubmitting || isGenerating || formData.max_length == null}
+            minLabel={t('pg.chars', { n: 10 })}
+            maxLabel={t('pg.chars', { n: 10000 })}
           />
-        </div>
 
-        <div>
-          <Textarea
-            label="Description"
-            value={formData.guidelines}
-            onChange={(value) => updateFormField('guidelines', value)}
-            placeholder="Add additional context or details about the topic..."
-            rows={4}
-            disabled={isSubmitting || isGenerating}
-          />
+          <div className="flex items-end pb-0.5">
+            <Switch
+              checked={formData.max_length == null}
+              onChange={(checked) =>
+                updateFormField('max_length', checked ? undefined : 2000)
+              }
+              label={t('pg.autoLength')}
+              description={t('pg.autoLengthDesc')}
+              disabled={isSubmitting || isGenerating}
+            />
+          </div>
         </div>
       </section>
 
       <section className="space-y-4">
         <div>
           <h2 className="text-sm font-semibold text-surface-900 dark:text-surface-50">
-            Options
+            {t('pg.optionsTitle')}
           </h2>
           <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
-            Customize the generated content.
+            {t('pg.optionsSubtitle')}
           </p>
         </div>
 
@@ -180,8 +176,8 @@ export function PlaygroundForm({
               <Switch
                 checked={formData.include_code}
                 onChange={(checked) => updateFormField('include_code', checked)}
-                label="Include code"
-                description="Adds relevant code examples to the generated posts."
+                label={t('pg.includeCode')}
+                description={t('pg.includeCodeDesc')}
                 disabled={isSubmitting || isGenerating}
               />
             </div>
@@ -190,8 +186,8 @@ export function PlaygroundForm({
               <Switch
                 checked={formData.include_visual}
                 onChange={(checked) => updateFormField('include_visual', checked)}
-                label="Include visual"
-                description="Generates a visual suggestion for the content."
+                label={t('pg.includeVisual')}
+                description={t('pg.includeVisualDesc')}
                 disabled={isSubmitting || isGenerating}
               />
             </div>
@@ -200,8 +196,8 @@ export function PlaygroundForm({
               <Switch
                 checked={formData.include_hashtags ?? true}
                 onChange={(checked) => updateFormField('include_hashtags', checked)}
-                label="Generate hashtags"
-                description="Generates popular and niche hashtags for the post."
+                label={t('pg.genHashtags')}
+                description={t('pg.genHashtagsDesc')}
                 disabled={isSubmitting || isGenerating}
               />
             </div>
@@ -210,8 +206,8 @@ export function PlaygroundForm({
               <Switch
                 checked={formData.include_hooks ?? true}
                 onChange={(checked) => updateFormField('include_hooks', checked)}
-                label="Generate hooks"
-                description="Generates engaging opening hook variations."
+                label={t('pg.genHooks')}
+                description={t('pg.genHooksDesc')}
                 disabled={isSubmitting || isGenerating}
               />
             </div>
@@ -220,15 +216,25 @@ export function PlaygroundForm({
               <Switch
                 checked={formData.include_review ?? true}
                 onChange={(checked) => updateFormField('include_review', checked)}
-                label="Quality review"
-                description="Performs quality scoring, strengths, and improvement suggestions."
+                label={t('pg.qualityReview')}
+                description={t('pg.qualityReviewDesc')}
+                disabled={isSubmitting || isGenerating}
+              />
+            </div>
+
+            <div className="px-4 py-3">
+              <Switch
+                checked={formData.use_rag ?? false}
+                onChange={(checked) => updateFormField('use_rag', checked)}
+                label={t('pg.useRag')}
+                description={t('pg.useRagDesc')}
                 disabled={isSubmitting || isGenerating}
               />
             </div>
 
             <div className="px-4 py-3">
               <Select
-                label="Language"
+                label={t('pg.languageLabel')}
                 value={formData.language}
                 onChange={(value) =>
                   updateFormField('language', value as GeneratePostRequest['language'])
@@ -239,47 +245,6 @@ export function PlaygroundForm({
             </div>
           </div>
         </div>
-      </section>
-
-      <section>
-        <button
-          type="button"
-          onClick={() => setShowGuidelines((current) => !current)}
-          className={cn(
-            'flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left transition-colors',
-            'border-surface-200 hover:bg-surface-50',
-            'dark:border-surface-800 dark:hover:bg-surface-900',
-          )}
-        >
-          <div className="flex items-center gap-2">
-            <Plus
-              className={cn(
-                'h-4 w-4 transition-transform',
-                showGuidelines && 'rotate-45',
-              )}
-            />
-            <div>
-              <p className="text-sm font-medium text-surface-900 dark:text-surface-50">
-                Additional guidelines
-              </p>
-              <p className="text-xs text-surface-500 dark:text-surface-400">
-                Add specific instructions for the AI.
-              </p>
-            </div>
-          </div>
-        </button>
-
-        {showGuidelines && (
-          <div className="mt-3">
-            <Textarea
-              value={formData.guidelines}
-              onChange={(value) => updateFormField('guidelines', value)}
-              placeholder="Tell the AI anything else it should consider..."
-              rows={5}
-              disabled={isSubmitting || isGenerating}
-            />
-          </div>
-        )}
       </section>
     </div>
   )

@@ -10,6 +10,7 @@ class CodeImagePreset(Base):
     name = Column(String(100), nullable=False)
     theme = Column(String(50), nullable=False)
     language = Column(String(50), nullable=False)
+    syntax_theme = Column(String(50), nullable=False, default="vscode-dark")
     font_family = Column(String(200), nullable=False)
     font_size = Column(String(10), nullable=False)
     padding = Column(String(10), nullable=False)

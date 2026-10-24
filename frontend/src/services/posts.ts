@@ -1,6 +1,6 @@
 import { api } from './api'
 import type {
-  GeneratePostRequest,
+  GeneratePostPayload,
   GeneratePostResponse,
   TaskStatusResponse,
   PostHistoryListResponse,
@@ -16,10 +16,18 @@ import type {
   PostEdit,
   CodePreset,
   AppSettings,
+  UpdateEditorialStatusRequest,
+  CalendarItem,
+  PostUsageSummary,
+  GlobalUsageSummary,
+  GenerateImageResponse,
+  RagStatus,
+  RagDocument,
+  RagDocumentCreated,
 } from '../types'
 
 export const postsApi = {
-  generate: (data: GeneratePostRequest) =>
+  generate: (data: GeneratePostPayload) =>
     api.post<GeneratePostResponse>('/posts/generate', data),
 
   getStatus: (taskId: string) =>
@@ -33,7 +41,13 @@ export const postsApi = {
     page_size?: number
     search?: string
     status?: string
-    is_favorite?: boolean
+    editorial_status?: string
+    favorito?: boolean
+    has_code?: boolean
+    start_date?: string
+    end_date?: string
+    sort_by?: string
+    sort_order?: string
   }) => api.get<PostHistoryListResponse>('/history', params),
 
   getDetail: (id: string) =>
@@ -47,6 +61,20 @@ export const postsApi = {
 
   updateTags: (id: string, data: UpdateTagsRequest) =>
     api.patch<PostHistoryBase>(`/history/${id}/tags`, data),
+
+  updateEditorialStatus: (id: string, data: UpdateEditorialStatusRequest) =>
+    api.patch<PostHistoryBase>(`/history/${id}/editorial`, data),
+
+  calendar: () => api.get<CalendarItem[]>('/calendar'),
+
+  getUsage: (id: string) =>
+    api.get<PostUsageSummary>(`/history/${id}/usage`),
+
+  usageSummary: () =>
+    api.get<GlobalUsageSummary>('/usage/summary'),
+
+  generateImage: (id: string) =>
+    api.post<GenerateImageResponse>(`/history/${id}/image`),
 
   saveEdit: (id: string, data: { post_index: number; content: string; original_content?: string }) =>
     api.post<PostEdit>(`/history/${id}/edits`, data),
@@ -80,3 +108,12 @@ export const settingsApi = {
 export const healthApi = {
   check: () => api.get<HealthResponse>('/health'),
 }
+
+export const ragApi = {
+  status: () => api.get<RagStatus>('/rag/status'),
+  list: () => api.get<RagDocument[]>('/rag/documents'),
+  create: (data: FormData) => api.post<RagDocumentCreated>('/rag/documents', data),
+  delete: (id: string) => api.delete(`/rag/documents/${id}`),
+}
+
+export { emailApi } from './emails'

@@ -1,14 +1,8 @@
 export type StyleEnum =
   | 'Technical'
-  | 'Storytelling'
-  | 'Opinion/Controversial'
-  | 'Educational'
-  | 'Career/Soft Skills'
   | 'Humor/Technology'
   | 'Minimalist'
-  | 'Case Study'
-  | 'Trends/News'
-  | 'Personal/Autobiographical';
+  | 'Trends/News';
 
 export type AudienceEnum =
   | 'Junior Developers'
@@ -46,6 +40,8 @@ export type FormatEnum =
   | 'Strong Opinion (Controversial)'
   | 'Mini Tutorial (Step by step)';
 
+export type InputMode = 'structured' | 'description'
+
 export interface GeneratePostRequest {
   topic: string
   style: StyleEnum
@@ -62,7 +58,14 @@ export interface GeneratePostRequest {
   quantity: number
   language: string
   max_length?: number
+  input_mode?: InputMode
+  description?: string
+  visual_brief?: string
+  use_rag?: boolean
 }
+
+/** Payload da geração: campos estruturados são opcionais no modo description. */
+export type GeneratePostPayload = Partial<GeneratePostRequest>
 
 export interface GeneratePostResponse {
   task_id: string
@@ -78,6 +81,8 @@ export interface TaskStatusResponse {
   error?: string
 }
 
+export type EditorialStatus = 'draft' | 'approved' | 'scheduled' | 'published'
+
 export interface PostHistoryBase {
   id: string
   topic: string
@@ -89,6 +94,10 @@ export interface PostHistoryBase {
   include_code: boolean
   include_visual: boolean
   status: string
+  editorial_status: EditorialStatus
+  scheduled_at?: string
+  published_at?: string
+  generated_image_url?: string
   is_favorite: boolean
   is_edited?: boolean
   tags: string[]
@@ -96,6 +105,26 @@ export interface PostHistoryBase {
   updated_at: string
   completed_at?: string
   error_message?: string
+  total_cost_usd?: number
+  total_tokens?: number
+}
+
+export interface UpdateEditorialStatusRequest {
+  editorial_status: EditorialStatus
+  scheduled_at?: string
+  published_at?: string
+}
+
+export interface CalendarItem {
+  id: string
+  topic: string
+  style: string
+  format: string
+  editorial_status: EditorialStatus
+  scheduled_at?: string
+  published_at?: string
+  created_at: string
+  is_favorite: boolean
 }
 export type CodeExample = {
   language: string;
@@ -201,8 +230,8 @@ export interface HealthResponse {
 export type TaskStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled'
 
 export interface PostEdit {
-  id: number
-  post_id: number
+  id: string
+  post_id: string
   post_index: number
   content: string
   original_content?: string
@@ -214,6 +243,7 @@ export interface CodePreset {
   name: string
   theme: string
   language: string
+  syntax_theme?: string
   font_family: string
   font_size: string
   padding: string
@@ -223,12 +253,82 @@ export interface CodePreset {
 }
 
 export interface AppSettings {
-  id?: number
+  id?: string
   provider: string
   model_name: string
   api_key?: string
   tavily_api_key?: string
   temperature: number
   language: string
+  image_provider?: string
+  image_model?: string
+  image_api_key?: string
+  guidelines?: string
+  rag_chunk_size?: number
+  rag_chunk_overlap?: number
+  rag_top_k?: number
+  rag_min_score?: number
+  rag_rerank?: boolean
   updated_at?: string
 }
+
+export interface PostUsageRecord {
+  id: string
+  post_id?: string
+  task_id?: string
+  step: string
+  provider: string
+  model_name: string
+  input_tokens: number
+  output_tokens: number
+  total_tokens: number
+  cost_usd: number
+  created_at: string
+}
+
+export interface PostUsageSummary {
+  records: PostUsageRecord[]
+  total_input_tokens: number
+  total_output_tokens: number
+  total_tokens: number
+  total_cost_usd: number
+}
+
+export interface GlobalUsageSummary {
+  total_cost_usd: number
+  total_tokens: number
+  posts_with_usage: number
+  avg_cost_per_post: number
+  by_model: { provider: string; model_name: string; total_tokens: number; cost_usd: number }[]
+  by_step: { step: string; cost_usd: number }[]
+}
+
+export interface GenerateImageResponse {
+  image_url: string
+  cost_usd: number
+}
+
+export interface RagStatus {
+  available: boolean
+  error?: string
+  database_url: string
+  embedding_model: string
+  vector_dim: number
+}
+
+export interface RagDocument {
+  id: string
+  title: string
+  chunk_count: number
+  embedding_model: string
+  created_at: string
+  preview?: string
+}
+
+export interface RagDocumentCreated {
+  id: string
+  title: string
+  chunk_count: number
+}
+
+export * from './email';

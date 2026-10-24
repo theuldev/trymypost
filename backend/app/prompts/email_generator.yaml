@@ -1,0 +1,89 @@
+_type: prompt
+input_variables: [
+  "job_description", "extracted_info", "full_name", "phone_or_whatsapp",
+  "linkedin_url", "github_url", "salary_expectation_required",
+  "job_title", "recruiter_name", "recruiter_name_or_team", "key_requirements", "technologies",
+  "experience_desired", "experience_summary", "salary_expectation", "global_guidelines"
+]
+template: |
+  Generate a personalized job application email in Portuguese (Brazil).
+
+  JOB DESCRIPTION:
+  {job_description}
+
+  EXTRACTED JOB INFO:
+  {extracted_info}
+
+  USER PROFILE (real data from Settings):
+  Name: {full_name}
+  Phone/WhatsApp: {phone_or_whatsapp}
+  LinkedIn: {linkedin_url}
+  GitHub: {github_url}
+
+  USER EXPERIENCE SUMMARY (only source for the experience paragraph):
+  {experience_summary}
+
+  USER SALARY EXPECTATION (only source for the salary paragraph):
+  {salary_expectation}
+
+  USER INSTRUCTIONS FROM SETTINGS (global guidelines; follow them when they apply to emails):
+  {global_guidelines}
+
+  JOB REQUIREMENTS REFERENCE (only to align wording to the vacancy; do NOT claim them as your own experience):
+  {key_requirements}
+  {technologies}
+
+  SALARY EXPECTATION REQUIRED: {salary_expectation_required}
+
+  RULES:
+  1. Use the appropriate template based on salary_expectation_required
+  2. Build the experience paragraph using ONLY information present in USER EXPERIENCE SUMMARY.
+     - Never invent years of experience, seniority levels, technologies, projects or certifications.
+     - Never copy requirements from JOB REQUIREMENTS REFERENCE as if they were your experience.
+     - If the summary is empty or has nothing relevant, use a neutral sentence instead:
+       "Segue minha trajetória completa no currículo em anexo."
+  3. Build the salary paragraph using ONLY the value in USER SALARY EXPECTATION.
+     - If it is empty, use a neutral sentence without inventing values:
+       "Minha pretensão salarial está aberta à discussão, alinhada à proposta completa da empresa."
+  4. Use ONLY real user profile data - omit empty fields entirely
+  5. Keep it natural, concise, and professional
+  6. Output ONLY valid JSON:
+
+  {{
+    "recipient_email": "string or null",
+    "subject": "string",
+    "body": "string"
+  }}
+
+  TEMPLATE 1 - NO SALARY EXPECTATION:
+  Subject: Candidatura: {job_title} - {full_name}
+  Body:
+  Olá, {recruiter_name_or_team}, tudo bem?
+
+  Vi a vaga para {job_title} no LinkedIn e me interessei bastante, pois o perfil alinha-se muito com o meu dia a dia.
+
+  [PARÁGRAFO DE EXPERIÊNCIA — gerado conforme a RULES acima]
+
+  Segue meu currículo em anexo para análise. Se fizer sentido para vocês, será um prazer bater um papo para apresentar melhor o meu trabalho!
+
+  TEMPLATE 2 - WITH SALARY EXPECTATION:
+  Subject: Candidatura: {job_title} - {full_name}
+  Body:
+  Olá, {recruiter_name_or_team}, tudo bem?
+
+  Vi a vaga para {job_title} no LinkedIn e me interessei bastante, pois o perfil alinha-se muito com o meu dia a dia.
+
+  [PARÁGRAFO DE EXPERIÊNCIA — gerado conforme a RULES acima]
+
+  [PARÁGRAFO DE PRETENSÃO SALARIAL — gerado conforme a RULES acima]
+
+  Segue meu currículo em anexo. Se fizer sentido para vocês, será um prazer bater um papo para contar mais sobre minhas experiências!
+
+  IMPORTANT - SIGNATURE RULE:
+  - End the body EXACTLY at the last content paragraph shown in the template above.
+  - Do NOT include any closing greeting, signature line, your name, phone, LinkedIn or GitHub at the end of the body.
+  - The signature block (name + contact details from USER PROFILE) is appended automatically by the system.
+
+  VARIABLE NOTES:
+  - job_title, recruiter_name_or_team are pre-computed variables passed as input.
+  - experience_summary, salary_expectation and global_guidelines come from the user's Settings.

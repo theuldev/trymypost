@@ -3,19 +3,15 @@ import { useMemo } from 'react'
 
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
-import { Card, CardBody } from '@/components/ui/Card'
+import { useTranslation } from '@/i18n'
 import { cn } from '@/utils/cn'
-
-import { STYLE_ICONS } from '@/constants/playground'
 
 import { PlaygroundReviewCard } from './PlaygroundReviewCard'
 import { VisualCard } from './VisualCard'
 
-import type { PostVariation } from '@/types/common'
+import type { PostVariation } from '@/types'
 import type { ResultTab } from '../types'
 export type { ResultTab }
-
-const styleIcons = STYLE_ICONS as Record<string, LucideIcon>
 
 interface PlaygroundResultsProps {
   generatedPosts: PostVariation[]
@@ -30,13 +26,13 @@ interface PlaygroundResultsProps {
   showHeading?: boolean
 }
 
-const TAB_CONFIG: Array<{ key: ResultTab; label: string; icon: LucideIcon }> = [
-  { key: 'posts', label: 'Post', icon: FileText },
-  { key: 'code', label: 'Code', icon: Code2 },
-  { key: 'hashtags', label: 'Hashtags', icon: Tag },
-  { key: 'hooks', label: 'Hooks', icon: Flag },
-  { key: 'review', label: 'Review', icon: CheckCircle },
-  { key: 'visual', label: 'Visual', icon: Palette },
+const TAB_CONFIG: Array<{ key: ResultTab; labelKey: string; icon: LucideIcon }> = [
+  { key: 'posts', labelKey: 'pg.tabPosts', icon: FileText },
+  { key: 'code', labelKey: 'pg.tabCode', icon: Code2 },
+  { key: 'hashtags', labelKey: 'pg.tabHashtags', icon: Tag },
+  { key: 'hooks', labelKey: 'pg.tabHooks', icon: Flag },
+  { key: 'review', labelKey: 'pg.tabReview', icon: CheckCircle },
+  { key: 'visual', labelKey: 'pg.tabVisual', icon: Palette },
 ]
 
 export function PlaygroundResults({
@@ -48,11 +44,10 @@ export function PlaygroundResults({
   handleCopy,
   handleOpenPreview,
   handleGenerateCodeImage,
-  style,
   showHeading = true,
 }: PlaygroundResultsProps) {
+  const { t } = useTranslation()
   const currentVariation = selectedVariation ?? generatedPosts[0] ?? null
-  const StyleIcon = styleIcons[style] ?? FileText
 
   const availableTabs = useMemo(() => {
     if (!currentVariation) return []
@@ -94,39 +89,32 @@ export function PlaygroundResults({
   const renderPostsContent = () => {
     if (!currentVariation) return null
     return (
-      <Card variant="bordered">
-        <CardBody className="p-4">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <span className="rounded-full bg-primary-100 px-2 py-1 text-xs font-medium text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
-                Variation {currentVariation.variation}
-              </span>
-              <StyleIcon className="h-4 w-4 text-primary-500 dark:text-primary-400" />
-            </div>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleCopy(currentVariation.content)}
-                leftIcon={<Copy className="h-3.5 w-3.5" />}
-              >
-                Copy
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleOpenPreview(currentVariation)}
-                leftIcon={<Eye className="h-3.5 w-3.5" />}
-              >
-                Preview
-              </Button>
-            </div>
-          </div>
-          <p className="whitespace-pre-wrap text-sm leading-relaxed text-surface-700 dark:text-surface-300">
+      <div className="space-y-4">
+        <div className="border-l-2 border-primary-500 py-1 pl-4">
+          <p className="whitespace-pre-wrap text-xs leading-relaxed text-surface-800 dark:text-surface-200">
             {currentVariation.content}
           </p>
-        </CardBody>
-      </Card>
+        </div>
+
+        <div className="flex items-center gap-2 pt-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleCopy(currentVariation.content)}
+            leftIcon={<Copy className="h-3.5 w-3.5" />}
+          >
+            {t('pg.copy')}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleOpenPreview(currentVariation)}
+            leftIcon={<Eye className="h-3.5 w-3.5" />}
+          >
+            {t('pg.preview')}
+          </Button>
+        </div>
+      </div>
     )
   }
 
@@ -136,37 +124,51 @@ export function PlaygroundResults({
     return (
       <div className="space-y-4">
         {examples.map((example, index) => (
-          <Card key={index}>
-            <CardBody className="p-4">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <span className="text-sm font-medium text-primary-600 dark:text-primary-400">
-                  Code Example #{index + 1}
-                  {example.language ? ` · ${example.language}` : ''}
-                </span>
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleCopy(example.code)}
-                    leftIcon={<Copy className="h-3.5 w-3.5" />}
-                  >
-                    Copy
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleGenerateCodeImage(example.code, example.language)}
-                    leftIcon={<ImageIcon className="h-3.5 w-3.5" />}
-                  >
-                    Code Image
-                  </Button>
+          <div
+            key={index}
+            className="overflow-hidden rounded-lg border border-surface-200 dark:border-surface-800"
+          >
+            <div className="flex items-center justify-between gap-3 border-b border-surface-200 px-3 py-2.5 dark:border-surface-800">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <Code2 className="h-3.5 w-3.5 shrink-0 text-primary-600" />
+                  <span className="truncate text-xs font-medium text-surface-900 dark:text-surface-50">
+                    {t('pg.codeExample', { n: index + 1 })}
+                  </span>
                 </div>
+                {example.language && (
+                  <span className="ml-5 text-[10px] text-surface-400">
+                    {example.language}
+                  </span>
+                )}
               </div>
-              <pre className="rounded-xl border border-surface-800 bg-surface-900 p-4 text-xs font-mono leading-relaxed text-surface-100 overflow-x-auto max-h-96 overflow-y-auto dark:bg-black">
-                {example.code}
+
+              <div className="flex shrink-0 items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleCopy(example.code)}
+                  title={t('pg.copy')}
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleGenerateCodeImage(example.code, example.language)}
+                  title={t('pg.codeImage')}
+                >
+                  <ImageIcon className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="bg-surface-900 px-4 py-3 dark:bg-black">
+              <pre className="whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed text-surface-100">
+                <code>{example.code}</code>
               </pre>
-            </CardBody>
-          </Card>
+            </div>
+          </div>
         ))}
       </div>
     )
@@ -176,31 +178,37 @@ export function PlaygroundResults({
     const hashtags = currentVariation?.hashtags ?? []
     if (hashtags.length === 0) return null
     return (
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="divide-y divide-surface-200 dark:divide-surface-800">
         {hashtags.map((hashtag, index) => (
-          <Card key={`${hashtag.tag}-${index}`}>
-            <CardBody className="flex items-center justify-between gap-4">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <Tag className="h-4 w-4 shrink-0 text-primary-600" />
-                  <p className="truncate text-sm font-medium text-surface-900 dark:text-surface-50">
-                    {hashtag.tag}
-                  </p>
-                </div>
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <Badge variant="neutral">{hashtag.relevance}</Badge>
-                  {hashtag.estimated_volume && (
-                    <span className="text-xs text-surface-500 dark:text-surface-400">
-                      {hashtag.estimated_volume}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <Button variant="ghost" size="sm" onClick={() => handleCopy(hashtag.tag)}>
-                <Copy className="h-4 w-4" />
+          <div
+            key={`${hashtag.tag}-${index}`}
+            className="flex items-center justify-between gap-4 py-2.5 first:pt-0 last:pb-0"
+          >
+            <div className="flex min-w-0 items-center gap-2">
+              <Tag className="h-3.5 w-3.5 shrink-0 text-primary-600" />
+              <span className="truncate text-xs font-medium text-surface-900 dark:text-surface-50">
+                #{hashtag.tag.replace(/^#/, '')}
+              </span>
+            </div>
+
+            <div className="flex shrink-0 items-center gap-3">
+              <Badge variant="neutral" size="sm" className="text-[10px]">
+                {hashtag.relevance}
+              </Badge>
+              {hashtag.estimated_volume && (
+                <span className="text-[11px] text-surface-400">
+                  {hashtag.estimated_volume}
+                </span>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleCopy(hashtag.tag)}
+              >
+                <Copy className="h-3.5 w-3.5" />
               </Button>
-            </CardBody>
-          </Card>
+            </div>
+          </div>
         ))}
       </div>
     )
@@ -210,34 +218,45 @@ export function PlaygroundResults({
     const hooks = currentVariation?.hooks ?? []
     if (hooks.length === 0) return null
     return (
-      <div className="space-y-4">
+      <div className="divide-y divide-surface-200 dark:divide-surface-800">
         {hooks.map((hook, index) => (
-          <Card key={`${hook.text.slice(0, 20)}-${index}`}>
-            <CardBody>
-              <div className="mb-4 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-2">
-                  <Badge variant="primary">{hook.type}</Badge>
-                  <span className="text-xs text-surface-500 dark:text-surface-400">
-                    Hook #{index + 1}
-                  </span>
-                </div>
-                <Button variant="ghost" size="sm" onClick={() => handleCopy(hook.text)}>
-                  <Copy className="h-4 w-4" />
-                </Button>
+          <div
+            key={`${hook.text.slice(0, 20)}-${index}`}
+            className="group flex gap-3 py-4 first:pt-0 last:pb-0"
+          >
+            <span className="shrink-0 pt-0.5 text-[11px] text-surface-400">
+              {String(index + 1).padStart(2, '0')}
+            </span>
+
+            <div className="min-w-0 flex-1">
+              <div className="mb-1 flex items-center gap-2">
+                <Badge variant="primary" size="sm" className="text-[10px]">
+                  {hook.type}
+                </Badge>
               </div>
-              <p className="text-sm font-medium leading-6 text-surface-900 dark:text-surface-50">
+
+              <p className="text-xs font-medium leading-relaxed text-surface-900 dark:text-surface-50">
                 {hook.text}
               </p>
-              <div className="mt-4 rounded-lg bg-surface-50 p-3 dark:bg-surface-900">
-                <p className="text-xs font-medium text-surface-700 dark:text-surface-300">
-                  Why it works
-                </p>
-                <p className="mt-1 text-xs leading-5 text-surface-500 dark:text-surface-400">
+
+              {hook.why_it_works && (
+                <p className="mt-1.5 text-[11px] leading-relaxed text-surface-400">
+                  <span className="font-medium text-surface-600 dark:text-surface-300">
+                    {t('pg.whyItWorks')}
+                  </span>{' '}
                   {hook.why_it_works}
                 </p>
-              </div>
-            </CardBody>
-          </Card>
+              )}
+            </div>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleCopy(hook.text)}
+            >
+              <Copy className="h-3.5 w-3.5" />
+            </Button>
+          </div>
         ))}
       </div>
     )
@@ -275,11 +294,11 @@ export function PlaygroundResults({
     <section className={showHeading ? "mt-10" : "mt-6"}>
       {showHeading && (
         <div className="mb-5">
-          <h2 className="text-lg font-semibold text-surface-900 dark:text-surface-50">
-            Generated Results
+          <h2 className="text-base font-semibold text-surface-900 dark:text-surface-50">
+            {t('pg.resultsTitle')}
           </h2>
-          <p className="mt-1 text-sm text-surface-500 dark:text-surface-400">
-            Review and refine the generated content.
+          <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
+            {t('pg.resultsSubtitle')}
           </p>
         </div>
       )}
@@ -292,20 +311,20 @@ export function PlaygroundResults({
               type="button"
               onClick={() => selectVariation(post)}
               className={cn(
-                'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
                 currentVariation?.variation === post.variation
                   ? 'bg-primary-100 text-primary-700 dark:bg-primary-950/60 dark:text-primary-400'
                   : 'text-surface-500 hover:bg-surface-100 dark:hover:bg-surface-800',
               )}
             >
-              Variação {post.variation}
+              {t('pg.variation', { n: post.variation })}
             </button>
           ))}
         </div>
       )}
 
-      <div className="mb-6 overflow-x-auto border-b border-surface-200 dark:border-surface-800">
-        <div className="flex min-w-max gap-1">
+      <div className="mb-6 border-b border-surface-200 dark:border-surface-800">
+        <div className="flex flex-wrap gap-1">
           {availableTabs.map((tab) => {
             const Icon = tab.icon
             return (
@@ -314,16 +333,16 @@ export function PlaygroundResults({
                 type="button"
                 onClick={() => setActiveTab(tab.key as ResultTab)}
                 className={cn(
-                  'flex items-center gap-2 border-b-2 px-3 py-3 text-sm font-medium transition-colors',
+                  'flex items-center gap-2 border-b-2 px-3 py-3 text-xs font-medium transition-colors',
                   effectiveTab === tab.key
                     ? 'border-primary-600 text-primary-600'
                     : 'border-transparent text-surface-500 hover:text-surface-900 dark:hover:text-surface-50',
                 )}
               >
-                <Icon className="h-4 w-4" />
-                <span>{tab.label}</span>
+                <Icon className="h-3.5 w-3.5" />
+                <span>{t(tab.labelKey)}</span>
 
-                {tab.count > 0 && tab.key !== 'posts' && (
+                {tab.count > 0 && (
                   <span
                     className={cn(
                       'rounded-full px-1.5 py-0.5 text-[10px]',

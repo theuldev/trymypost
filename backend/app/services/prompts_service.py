@@ -1,9 +1,6 @@
 import yaml
 from pathlib import Path
 from typing import Dict, Any
-from app.core.config import get_settings
-
-settings = get_settings()
 
 PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
 
@@ -11,13 +8,19 @@ PROMPT_FILES = {
     "topic_suggest": "topic_suggestor.yaml",
     "topic_research": "topic_researcher.yaml",
     "post_generation": "post_generator.yaml",
-    "hashtag_generation": "hashtag_suggestor.yaml",
+    "post_from_description": "post_from_description.yaml",
+    "hashtag_suggestion": "hashtag_suggestor.yaml",
     "review": "post_reviewer.yaml",
     "hook_generation": "hook_generator.yaml",
     "visual_suggestion": "visual_suggestor.yaml",
     "code_generator": "code_generator.yaml",
-    "topic_creation": "topic_creator.yaml",
-    "translation": "translation.yaml",
+    "email_analyzer": "email_analyzer.yaml",
+    "email_tavily_researcher": "email_tavily_researcher.yaml",
+    "email_generator": "email_generator.yaml",
+    "job_extraction": "job_extraction.yaml",
+    "job_matching": "job_matching.yaml",
+    "job_synthesis": "job_synthesis.yaml",
+    "job_market_researcher": "job_market_researcher.yaml",
 }
 
 PROMPT_TEMPLATES: Dict[str, Dict[str, Any]] = {}
@@ -42,15 +45,9 @@ def get_prompt(key: str) -> Dict[str, Any]:
 
 STYLE_MAP = {
     "Technical": "technical, direct, focused on architecture, performance and best practices",
-    "Storytelling": "narrative, with emotional hook, personal journey and lessons learned",
-    "Opinion/Controversial": "provocative, strong opinion, contrarian, debate generator",
-    "Educational": "didactic, step by step, with practical examples and analogies",
-    "Career/Soft Skills": "reflective, focused on growth, leadership, communication",
     "Humor/Technology": "light, ironic, dev memes, relatable daily situations",
     "Minimalist": "short, direct, one central idea, clean formatting",
-    "Case Study": "data-driven, problem-solution-result, real metrics",
     "Trends/News": "journalistic, 'what's new', practical impact, urgency",
-    "Personal/Autobiographical": "intimate, vulnerable, career journey, mistakes and successes",
 }
 
 STRUCTURE_INSTRUCTIONS = {
